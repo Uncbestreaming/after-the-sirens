@@ -22,7 +22,7 @@ function resumeGame(){const record=storedGame();if(!record||!record.hero||!recor
 
 function renderStart(){refreshSaveControls();document.querySelector('#profile').textContent='Your survivor profile will appear here.';document.querySelector('#stats').innerHTML='';main.innerHTML=`<div class="head"><h2>Build your survivor</h2><span class="eyebrow">01 · Identity</span></div><p>Tell us who you were before the sirens. Your history changes what you notice and which approaches make sense.</p><div class="fields"><div class="field"><label for="name">Name or call sign</label><input id="name" maxlength="28" placeholder="What do people call you?"></div><div class="field"><label for="age">Age</label><input id="age" type="number" min="13" max="100" placeholder="13–100"></div><div class="field"><label for="race">Race / heritage</label><input id="race" maxlength="48" placeholder="How you identify"></div><div class="field"><label for="gender">Gender · narration preference</label><select id="gender"><option value="woman">Woman · feminine voice</option><option value="man">Man · masculine voice</option><option value="nonbinary">Nonbinary · neutral voice</option><option value="unspecified">Prefer not to say · neutral voice</option></select></div><div class="field full"><label for="job">Work and life experience</label><select id="job"><option value="">Choose a background</option><option value="healthcare">Healthcare / EMT</option><option value="trades">Trades / maintenance</option><option value="security">Military / security</option><option value="education">Teacher / caregiver</option><option value="service">Food service / retail</option><option value="driver">Driver / delivery</option><option value="office">Office / administration</option><option value="student">Student</option><option value="other">Other / self-taught</option></select></div><div class="field full"><label for="stake">Personal stake · optional</label><input id="stake" maxlength="110" placeholder="A person, place, promise, or fear that keeps you moving"></div><div class="field"><label for="housing">Where do you live?</label><select id="housing"><option value="">Choose one</option><option value="apartment">Apartment</option><option value="home">House</option></select></div><div class="field"><label for="gunOwner">Do you own a firearm?</label><select id="gunOwner"><option value="">Choose one</option><option value="yes">Yes</option><option value="no">No</option></select></div></div><div class="note">Age and identity add flavor and perspective; practical experience and chosen skills shape actions. The story does not assign abilities or worth based on race or gender.</div><div id="error" class="error" role="alert"></div><div class="actions"><span class="small">You can replay with a different survivor.</span><button class="btn" onclick="toSkills()">Choose skills →</button></div>`}
 function toSkills(){const name=document.querySelector('#name').value.trim(),age=Number(document.querySelector('#age').value),race=document.querySelector('#race').value.trim(),job=document.querySelector('#job').value;const housing=document.querySelector('#housing').value,gunOwner=document.querySelector('#gunOwner').value;if(!name||age<13||age>100||!race||!job||!housing||!gunOwner){document.querySelector('#error').textContent='Fill in each field. Age must be between 13 and 100.';return}hero={name,age,race,job,gender:document.querySelector('#gender').value,stake:document.querySelector('#stake').value.trim(),housing,gunOwner:gunOwner==='yes',skills:[]};main.innerHTML=`<div class="head"><h2>Choose your edge</h2><span class="count"><b id="count">0</b> / 5 selected</span></div><p>Pick exactly five. Skills can reveal details, unlock safer options, and improve the outcome of risky actions.</p><div class="skillgrid">${skills.map(([n,d])=>`<button class="skill" id="skill-${n}" onclick="toggleSkill('${n}')"><strong>${n}</strong><small>${d}</small></button>`).join('')}</div><div class="actions"><button class="btn secondary" onclick="renderStart()">← Back</button><button class="btn" id="begin" disabled onclick="begin()">Begin the story →</button></div>`}
-function toggleSkill(n){const i=hero.skills.indexOf(n);if(i>=0)hero.skills.splice(i,1);else if(hero.skills.length<5)hero.skills.push(n);document.querySelector('#skill-'+n).classList.toggle('selected',hero.skills.includes(n));document.querySelector('#count').textContent=hero.skills.length;document.querySelector('#begin').disabled=hero.skills.length!==5}
+function toggleSkill(n){const i=hero.skills.indexOf(n);if(i>=0)hero.skills.splice(i,1);else if(hero.skills.length<5)hero.skills.push(n);document.getElementById('skill-'+n)?.classList.toggle('selected',hero.skills.includes(n));document.querySelector('#count').textContent=hero.skills.length;document.querySelector('#begin').disabled=hero.skills.length!==5}
 const has=n=>hero.skills.includes(n);
 function qualifies(skill){if(has(skill))return true;const job=hero.job;const background={healthcare:['First Aid'],trades:['Mechanics'],driver:['Driving'],security:['Firearms','Athletics','Leadership'],education:['Leadership','Negotiation'],service:['Cooking','Negotiation'],office:['Radio Ops'],student:[],other:[]};if((background[job]||[]).includes(skill))return true;const adjacent={'Scavenging':['Foraging','Urban Survival'],'Foraging':['Scavenging'],'Negotiation':['Leadership'],'Leadership':['Negotiation'],'Athletics':['Mechanics']};return (adjacent[skill]||[]).some(has)}
 
@@ -120,7 +120,218 @@ const authoredShow=show;show=function(id){currentScene=id;if(id==='death')return
 act=function(key,skill,label){if(key==='restart'){window.speechSynthesis?.cancel();renderStart();return}if(key==='nextDay'){state.pendingAdaptive=null;state.lastOutcome='You hold your position through the night. By morning, the immediate danger has passed, and the first sound you notice is somewhere beyond your cover.';state.lastEncounterKind=adaptiveScene.kind;state.lastActionWasStruck=false;state.lastActionKind='quiet';state.lastActionFocus='';state.lastActionIntent=null;state.actionDestination='';adaptiveBeat++;advanceTime(24);paintAdaptive();return}let kind=({talk:'social',peek:'quiet',radio:'radio',brace:'build',alley:'move',chain:'social',question:'care',weapon:'observe',neri:'social',wait:'quiet',stairs:'move',supplies:'search',yard:'move',river:'move',bus:'drive',clinic:'care',treat:'care',hold:'build'})[key]||actionKind(label||key);if(['chain','neri','yard'].includes(key)){state.party=2;state.companionPresent=true}resolveAdaptive(label||key,kind,false,skill)};typedAct=tryAdaptive;
 
 renderStart();
-</script></body></html>
+</script>
+<script>
+// Keep each new beat's actions tied to the specific outcome and current risk.
+const makeBaseAdaptiveBeat = adaptiveStory;
+adaptiveStory = function(){
+ const beat=makeBaseAdaptiveBeat();
+ const last=state.lastActionKind||'';
+ const contact=(state.npcContacts||{})[state.activeNpcId||'neri']||{};
+ const needsFood=(state.hunger??100)<55;
+ const needsWater=(state.thirst??100)<55;
+ const homeName=hero.housing==='home'?'house':'apartment';
+ if(beat.kind==='human'){
+  if(contact.knowsName&&contact.learnedName) beat.options=[
+   ['Ask what they need before discussing a trade.','social'],
+   ['Offer a fair trade for directions to safer cover.','social'],
+   ['Ask whether they will travel with you.','social'],
+   ['Leave without pressuring them.','move']
+  ];
+  else if(contact.learnedName) beat.options=[
+   [`Say, “My name is ${hero.name},” so they know who is speaking.`, 'social'],
+   ['Ask what they need before you decide whether to help.','social'],
+   ['Stay behind cover and listen.','quiet'],
+   ['Leave before the conversation draws attention.','move']
+  ];
+  else if(contact.knowsName) beat.options=[
+   ['Ask their name, then hear what they need.','social'],
+   ['Offer a small trade for directions.','social'],
+   ['Stay behind cover and listen.','quiet'],
+   ['Leave without pressuring them.','move']
+  ];
+  else beat.options=[
+   ['Introduce yourself and ask their name.','social'],
+   ['Ask what they need before offering anything.','social'],
+   ['Stay behind cover and listen.','quiet'],
+   ['Leave before the conversation draws attention.','move']
+  ];
+ }
+ if(beat.kind==='infected'){
+  if(state.lastThreatNeutralized) beat.options=[
+   ['Move away from the noise and get behind cover.','move'],
+   ['Secure the nearest door before more dead arrive.','build'],
+   ['Listen from cover to judge how many are coming.','quiet'],
+   ['Take the quiet route away from the street.','move']
+  ];
+  else if(state.lastActionWasStruck) beat.options=[
+   ['Break contact and retreat behind the nearest barrier.','move'],
+   ['Shut a door between you and the infected.','build'],
+   ['Hold still until it passes the doorway.','quiet'],
+   ['Fight only if it blocks the way out.','fight']
+  ];
+ }
+ if(beat.kind==='signal') beat.options=last==='radio'?
+  [['Record the coordinates, then locate the transmitter from cover.','track'],['Ask for one repeat of the location.','radio'],['Silence the radio and move toward a landmark.','move'],['Keep listening without transmitting.','quiet']]:
+  [['Answer briefly on the emergency frequency.','radio'],['Locate the transmitter from cover.','track'],['Write down what you heard and leave the channel quiet.','move'],['Turn the radio off and find secure cover.','move']];
+ if(beat.kind==='supplies'&&last==='search') beat.options=[
+  [state.lastSearchFound?'Carry what you found to cover.':'Leave this picked-over cache and move on.','move'],
+  ['Stay low and watch the nearest exit.','quiet'],
+  ['Secure the entrance before you handle anything else.','build'],
+  ['Scavenge the remaining hiding places carefully.','search']
+ ];
+ if(beat.kind==='supplies'&&last==='search'&&state.lastSearchFound)
+  beat.prose=beat.prose.replace('The useful items are packed. The room is quiet again, and the exit remains clear.','You pack what you found. The same room may have less obvious hiding places, but nothing here is unlimited.');
+ if(beat.kind==='food'&&last==='search'&&state.lastActionFocus==='food')
+  beat.prose=beat.prose.replace('The search is over. Nothing else turns up in this area.',state.lastSearchFound?'You gather the food you found. Other sealed packages may still be hidden here, but the obvious places have been checked.':'No sealed food turned up in the places you searched. The next useful lead will have to come from another room or a person.');
+ if(beat.kind==='water'&&last==='search'&&state.lastActionFocus==='water')
+  beat.prose=beat.prose.replace('The search is over. Nothing in this area suggests another water source.',state.lastSearchFound?'You secure the water you found. The remaining containers need a closer look before you can trust them.':'You found no safe water in the places you searched. Another source or a survivor with local knowledge may help.');
+ if(beat.kind==='food') beat.options=[
+  ['Look for unopened food in a different nearby place.','search'],
+  ['Ask a nearby survivor about a safe exchange.','social'],
+  ...(needsFood&&state.food>0?[['Eat one ration before you move.','consume']]:[]),
+  ['Move to cover before opening anything.','move']
+ ];
+ if(beat.kind==='water') beat.options=[
+  ['Find sealed water or a clean container.','search'],
+  ['Ask nearby survivors where they found drinkable water.','social'],
+  ...(needsWater&&state.water>0?[['Drink from your sealed supply.','consume']]:[]),
+  ['Move away from the runoff and find higher ground.','move']
+ ];
+ if(beat.kind==='shelter') beat.options=last==='build'?
+  [['Listen from inside the secured space.','quiet'],['Plan a route out before the street gets louder.','move'],['Search the room you are sheltering in.','search'],['Keep the entrance blocked.','build']]:
+  [['Approach the open entrance quietly.','quiet'],['Call out once and wait for an answer.','social'],['Secure the nearest exit behind you.','build'],['Keep moving toward safer cover.','move']];
+ if(beat.kind==='weather') beat.options=[
+  ['Move toward a covered entrance away from the runoff.','move'],
+  ['Search the place you are in for sealed water.','search'],
+  ['Secure a door against the rising water and noise.','build'],
+  ['Wait under cover and listen for movement.','quiet']
+ ];
+ if(beat.kind==='quiet'){
+  if(state.lastEncounterKind==='opening'&&last==='social') beat.options=[
+   ['Stay inside and listen for a reply.','quiet'],['Secure the nearest entrance.','build'],['Search the room while the call is unanswered.','search'],['Try the emergency broadcast instead.','radio']
+  ];
+  else beat.options=[
+   ['Keep listening from the same cover.','quiet'],['Move into the next room without running.','move'],['Secure the nearest door or barrier.','build'],['Take the route that leads away from the sound.','move']
+  ];
+ }
+ state.pendingAdaptive=adaptiveScene=beat;
+ return beat;
+};
+
+const makeBaseAftermath = actionAftermath;
+actionAftermath = function(kind,encounter,trained,struck,shotFired,companionJoined,careUsed,intent,consumeSucceeded){
+ const result=makeBaseAftermath(kind,encounter,trained,struck,shotFired,companionJoined,careUsed,intent,consumeSucceeded);
+ const contact=(state.npcContacts||{})[state.activeNpcId||'neri']||{};
+ if(kind==='social'&&encounter==='human'&&intent?.asksName&&contact.knowsName&&!intent.introducesName)
+  return result.replace('The question comes back to you: “And what should I call you?”','The name settles the introduction; they wait to hear why you came.');
+ return result;
+};
+
+const paintAdaptiveWithFreshChoices = paintAdaptive;
+paintAdaptive = function(){
+ if(state.pendingAdaptive&&state.health>0){
+  const saved=state.pendingAdaptive;
+  const refreshed=adaptiveStory();
+  if(refreshed.kind===saved.kind){saved.options=refreshed.options;state.pendingAdaptive=adaptiveScene=saved;}
+ }
+ return paintAdaptiveWithFreshChoices();
+};
+</script>
+<script>
+// Scene prose pass: add atmosphere and physical detail without changing outcomes or steering beyond the displayed choices.
+const richerSceneTextBase = sceneText;
+const sceneDetail = {
+ door:'The mug warms your fingers, but the coffee tastes scorched. The television throws a cold blue sheen across the kitchen; each cut to the street arrives a fraction of a second late, as if the city itself is struggling to keep up.',
+ talk:'The voice comes through the door thin and close. A shoe scuffs once, then goes still. Whoever is outside is trying to sound calm and running out of breath.',
+ peek:'The peephole bends the hallway into a fish-eye tunnel. The ceiling light buzzes overhead, and the shape below holds so still that for a moment it could be a discarded coat.',
+ brace:'Dust sifts from the frame with every impact. The dresser legs shriek over the floorboards, and the radio’s broken syllables make the silence between them feel crowded.',
+ alley:'The metal ladder flexes under your weight. Cold rainwater beads on the rail and slicks the brick; somewhere beyond the bus, a loose sign taps the wall in an uneven rhythm.',
+ chain:'Neri’s damp sleeve leaves a dark mark where she grips it. The room smells of old coffee and clean laundry, suddenly too ordinary for the blood brightening her cuff.',
+ question:'Neri searches your face for an answer you cannot give. Her words come out in short pieces, separated by breaths she is trying to control.',
+ weapon:'The flashlight’s weight settles into your palm. Its beam catches a floury fingerprint on the counter, then the sharp black seam beneath the door.',
+ wait:'Every small sound gains an edge: the refrigerator’s hum, a pipe ticking in the wall, the faint shift of your own clothes. Then the building answers with a bang from below.',
+ neri:'The door gives a narrow inch. Neri’s shoulder hits the frame as she crosses the threshold, and the air behind her carries the sour smell of wet concrete and something spoiled.',
+ stairs:'The handrail is tacky beneath your fingers. Bleach cannot quite cover the damp, metallic odor rising from the lower floors.',
+ radio:'Static swells between the words, filling the kitchen like wind through a cracked window. The speaker clicks twice after the transmission ends.',
+ supplies:'The bag’s straps bite into your shoulder as you test its weight. Dust outlines the places where everyday objects used to sit, and the map’s folded creases are soft from handling.',
+ bite:'Neri keeps her injured arm angled away from the light. The skin around the marks is already swelling; the room seems to contract around the small space between you.',
+ treat:'The cloth darkens as you wrap it. Neri watches your hands instead of the wound, jaw set against the sting and against the answer neither of you wants.',
+ hold:'Morning light creeps along the floor, gray and thin. The barricade stands, but the room bears fresh scratches and a deep dent where the door took the night’s worst blows.',
+ basement:'Water ticks somewhere in the dark, one drop at a time. The service map is curled at the corners, and the tunnel walls carry old painted arrows beneath newer grime.',
+ rooftop:'The roof gravel shifts underfoot. From here, the city looks almost orderly: straight roads, familiar blocks, smoke rising where the pattern breaks.',
+ bus:'The driver’s seat is still warm from the sun trapped behind the glass. A cracked route display blinks without a destination, and the rear doors flex with another muted bump.',
+ pharmacy:'The bell’s tiny chime hangs in the still air longer than it should. Dust lies over the shelves, except for a clean track where something was dragged toward the back.',
+ yard:'The rails hum faintly beneath the distant alarm. Freight cars tower overhead, their paint blistered by weather; every open gap offers a route and a place to be seen.',
+ clinic:'The clinic’s glass doors are webbed with cracks but still in their tracks. Inside, a generator light pulses against the walls, and the smell of disinfectant reaches the street in brief waves.',
+ river:'The river carries branches, plastic, and pale foam past the pilings. Across the water, windows reflect the low sky without showing what waits behind them.',
+ alone:'The strap of your bag has begun to rub your shoulder raw. The hand-painted arrow is uneven, but whoever made it took time to keep the letters legible.',
+ endClinic:'Night gathers in the clinic windows. Behind the barricade, people move quietly from one pool of lamplight to another, conserving both batteries and hope.',
+ endRiver:'The river keeps moving after the voices fade. The far bank is a dark strip under the clouds, close enough to imagine and too far to trust.',
+ endYard:'The alarm finally drops to a weak, intermittent chirp. The sudden quiet makes every distant footfall seem nearer.',
+ endTrade:'The traded supplies sit between you and the stranger like a fragile agreement. Neither of you looks away for long.'
+};
+const dailySceneDetail = ['The alarm’s thin chirp threads through the concrete. Even from cover, you can feel the open road narrowing into a choice of distance and noise.','The shopping cart’s loose wheel ticks against the pavement. The scavengers watch your hands, while the generator’s uneven thrum carries farther than their voices.','Rain dimples the rising water and rattles the underpass grates. The ladder shifts against the wall with each gust.','The lantern glow leaks through gaps in the boards. Shoe prints overlap in the damp dirt, making it hard to tell who went in and who came back out.'];
+sceneText = function(id, scene){
+ const base = richerSceneTextBase(id, scene);
+ const extra = id==='dayEvent' ? dailySceneDetail[(state.dayEventIndex||0)%4] : sceneDetail[id];
+ if(!extra || base.includes(extra)) return base;
+ return `${base}\n\n${extra}`;
+};
+const adaptiveStoryWithChoiceContextBase = adaptiveStory;
+const adaptiveDetail = {
+ human:'You keep your attention on the last place you heard the voice; the smallest shift in its echo may tell you whether the speaker has moved.',
+ infected:'Its clothes snag softly against the ground. The sound is almost too small to hear, which makes the slow approach worse, not better.',
+ signal:'The static leaves a dry hiss in your ears. A weak signal can vanish between one breath and the next.',
+ weather:'The air smells of wet pavement and rust. Water follows the street’s shallowest grooves, carrying grit toward the drains.',
+ shelter:'The doorway frames a narrow slice of darkness. Dust at the threshold shows that something crossed recently, though it cannot tell you what.',
+ supplies:'Loose straps and torn packaging stir in the draft. Whatever was dropped here has been exposed to the same uncertainty as everything else.',
+ food:'The smell of damp cardboard masks anything faint or fresh. Hunger makes every possibility seem more promising than it is.',
+ water:'A bead of water slides along the container’s rim and falls out of sight. Nothing about its clarity proves it is safe.',
+ quiet:'The pause does not feel empty. It is made of small sounds, each one waiting for the next.'
+};
+adaptiveStory = function(){
+ const beat = adaptiveStoryWithChoiceContextBase();
+ const extra = adaptiveDetail[beat.kind];
+ if(extra && !beat.prose.includes(extra)) beat.prose += `\n\n${extra}`;
+ return beat;
+};
+// Saved pending beats receive the same descriptive pass when reopened.
+if(state.pendingAdaptive){const extra=adaptiveDetail[state.pendingAdaptive.kind];if(extra&&!state.pendingAdaptive.prose.includes(extra))state.pendingAdaptive.prose+=`\n\n${extra}`;}
+</script>
+<script>
+// Small Web Audio cues; audio begins only after the player interacts with the page.
+(()=>{
+ let ctx;
+ function audio(){
+  const AudioContext=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContext)return null;
+  if(!ctx)ctx=new AudioContext();
+  if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+  return ctx;
+ }
+ function tone(c,f0,f1,duration,volume,type='sine',delay=0){
+  const now=c.currentTime+delay,osc=c.createOscillator(),gain=c.createGain();
+  osc.type=type;osc.frequency.setValueAtTime(f0,now);if(f1!==f0)osc.frequency.exponentialRampToValueAtTime(Math.max(1,f1),now+duration);
+  gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(volume,now+.004);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  osc.connect(gain);gain.connect(c.destination);osc.start(now);osc.stop(now+duration+.01);
+ }
+ function noise(c,duration,volume,filterFreq,delay=0){
+  const length=Math.ceil(c.sampleRate*duration),buffer=c.createBuffer(1,length,c.sampleRate),data=buffer.getChannelData(0);
+  for(let i=0;i<length;i++)data[i]=Math.random()*2-1;
+  const source=c.createBufferSource(),filter=c.createBiquadFilter(),gain=c.createGain(),now=c.currentTime+delay;
+  source.buffer=buffer;filter.type='bandpass';filter.frequency.value=filterFreq;filter.Q.value=.8;
+  gain.gain.setValueAtTime(volume,now);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  source.connect(filter);filter.connect(gain);gain.connect(c.destination);source.start(now);source.stop(now+duration);
+ }
+ function keyTap(){const c=audio();if(!c)return;tone(c,1450,980,.018,.018,'square');noise(c,.012,.012,2400,.002)}
+ function optionSelect(){const c=audio();if(!c)return;noise(c,.035,.055,1800);tone(c,420,260,.085,.055,'triangle',.035);tone(c,920,570,.06,.035,'square',.105)}
+ document.addEventListener('input',e=>{if(e.target.matches('input[type="text"],input:not([type]),textarea')&&e.target.value.length)keyTap()});
+ document.addEventListener('click',e=>{if(e.target.closest('.choice'))optionSelect()},true);
+})();
+</script>
+</body></html>
+
 
 
 
