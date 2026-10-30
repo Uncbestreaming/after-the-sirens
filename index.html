@@ -330,7 +330,9 @@ if(state.pendingAdaptive){const extra=adaptiveDetail[state.pendingAdaptive.kind]
  function keyTap(){const c=audio();if(!c)return;tone(c,1450,980,.018,.018,'square');noise(c,.012,.012,2400,.002)}
  function optionSelect(){const c=audio();if(!c)return;noise(c,.035,.055,1800);tone(c,420,260,.085,.055,'triangle',.035);tone(c,920,570,.06,.035,'square',.105)}
  document.addEventListener('input',e=>{if(e.target.matches('input[type="text"],input:not([type]),textarea')&&e.target.value.length)keyTap()});
- document.addEventListener('click',e=>{if(e.target.closest('.choice'))optionSelect()},true);
+ function touchCue(e){const option=e.target.closest('.choice,.skill,.weaponPick');if(option){optionSelect();return}if(e.target.closest('.dock-button,.useBtn'))keyTap()}
+ document.addEventListener('pointerdown',touchCue,true);
+ document.addEventListener('click',e=>{if(e.detail===0)touchCue(e)},true);
 })();
 </script>
 <script>
