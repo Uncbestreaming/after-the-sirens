@@ -601,6 +601,9 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
  const oldConnect=connectAdaptiveBeat;
  connectAdaptiveBeat=function(beat){if(!beat||beat._storyFlowRevision>=2)return beat;const outcome=String(state.lastOutcome||'').trim();let body=String(beat.prose||'');if(outcome&&body.startsWith(outcome))body=body.slice(outcome.length).replace(/^\s+/, '');const kind=state.lastActionKind||'';const bridges={build:'The immediate task is done. You stay in the same place, and the next decision is yours.',search:state.lastSearchFound?'You keep what you found and remain where you searched.':'The room is exhausted; searching it again will not produce more supplies.',move:'You reach only the place your action named. The next step is still yours to choose.',drive:'The vehicle remains at the destination you chose; nothing makes you continue.',radio:'The sound you followed gives you information, not a new destination.',social:'The exchange ends where it began. The other person has not moved you elsewhere.',quiet:'You hold your position and let the immediate sounds settle.',track:'You have a direction to consider, not an obligation to follow it.',care:'You finish tending to the immediate injury before deciding what comes next.',consume:'You finish the food or water you chose and remain in the current scene.'};const bridge=bridges[kind]||'The immediate result is clear; nothing else happens until you choose your next action.';beat.prose=outcome?`${outcome}\n\n${bridge}${body?`\n\n${body}`:''}`:`${body}\n\n${bridge}`;beat._storyFlowRevision=2;return beat};
 })();
+</script><script>
+// Keep quick defensive actions brief so scene time stays close to player intent.
+(()=>{const priorAdvance=advanceTime;advanceTime=function(hours,activity=''){if(activity==='build')return priorAdvance(Math.min(Number(hours)||0,.2),'observe');return priorAdvance(hours,activity)}})();
 </script></body></html>
 
 
