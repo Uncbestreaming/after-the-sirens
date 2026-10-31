@@ -604,6 +604,58 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
 </script><script>
 // Keep quick defensive actions brief so scene time stays close to player intent.
 (()=>{const priorAdvance=advanceTime;advanceTime=function(hours,activity=''){if(activity==='build')return priorAdvance(Math.min(Number(hours)||0,.2),'observe');return priorAdvance(hours,activity)}})();
+</script>
+<script>
+// Prevent repeated prose and consecutive beats that offer the same directions.
+(()=>{
+ const previousConnect=connectAdaptiveBeat;
+ const sentenceKey=value=>String(value||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+ function keepNewSentences(prose){
+  state.storySentenceHistory=Array.isArray(state.storySentenceHistory)?state.storySentenceHistory:[];
+  const seen=new Set(state.storySentenceHistory),kept=[];
+  const paragraphs=String(prose||'').split(/\n\s*\n/);
+  for(const paragraph of paragraphs){
+   const protectedText=paragraph.replace(/\b([ap])\.m\./gi,'$1¤m¤');
+   const sentences=protectedText.split(/(?<=[.!?]["'”’])\s+|(?<=[.!?])\s+(?=[A-Z“"‘])/);
+   const fresh=[];
+   for(const sentence of sentences){const key=sentenceKey(sentence);if(!key)continue;if(seen.has(key))continue;seen.add(key);state.storySentenceHistory.push(key);fresh.push(sentence.replace(/¤/g,'.'))}
+   if(fresh.length)kept.push(fresh.join(' '));
+  }
+  return kept.join('\n\n');
+ }
+ function directionKey(option){
+  const text=String(option?.[0]||'').toLowerCase(),kind=String(option?.[1]||'observe');
+  let move='';
+  if(kind==='quiet')move=/\b(listen|hear|monitor|count the sound|count the pause)\b/.test(text)?'listen':/\b(wait|hold position|stay put)\b/.test(text)?'wait':/\b(watch|look|check|observe|inspect)\b/.test(text)?'observe':'conceal';
+  else if(kind==='observe')move=/\b(listen|hear|monitor)\b/.test(text)?'listen':/\b(check|inspect|look|watch|count|read)\b/.test(text)?'inspect':'assess';
+  else if(kind==='move'||kind==='drive')move=/\b(return|back toward|retreat)\b/.test(text)?'retreat':/\b(cross|leave|escape|circle|move|take the route|head|travel|drive)\b/.test(text)?'relocate':'route';
+  else if(kind==='build')move=/\b(test|check)\b/.test(text)?'test-barrier':/\b(repair|reinforce|board|barricade|secure|lock|brace|wedge)\b/.test(text)?'secure-barrier':'prepare';
+  else if(kind==='search')move=/\b(water|drink|source|container)\b/.test(text)?'water':/\b(food|ration|meal|kitchen|pantry)\b/.test(text)?'food':/\b(medicine|medical|first aid|wound)\b/.test(text)?'medical':/\b(ammo|weapon|gun|rifle)\b/.test(text)?'weapons':'supplies';
+  else if(kind==='social')move=/\b(name|introduce)\b/.test(text)?'names':/\b(trade|offer|exchange)\b/.test(text)?'trade':/\b(call|message|contact)\b/.test(text)?'contact':/\b(ask|question|hear what)\b/.test(text)?'ask':'communicate';
+  else if(kind==='radio')move=/\b(record|write|mark|note)\b/.test(text)?'record':/\b(retune|tune|frequency|broadcast|radio)\b/.test(text)?'tune':'listen';
+  else if(kind==='track')move=/\b(mark|map|write|record)\b/.test(text)?'map':/\b(follow|trace|track|trail)\b/.test(text)?'follow':'locate';
+  else if(kind==='care')move=/\b(medicine|dose|meds)\b/.test(text)?'medicine':/\b(clean|bandage|dress|bind)\b/.test(text)?'dress-wound':'treat';
+  else if(kind==='consume')move=/\b(water|drink|hydrate)\b/.test(text)?'drink':'eat';
+  else if(kind==='fight'||kind==='fire')move=/\b(fire|shoot|weapon|gun)\b/.test(text)?'armed':'fight';
+  else move=kind;
+  let target='general';
+  const targets=[['door',/\b(door|latch|entry|threshold|barrier)\b/],['window',/\b(window|curtain)\b/],['radio',/\b(radio|frequency|signal|broadcast|transmission)\b/],['street',/\b(street|road|block|pavement|traffic)\b/],['water',/\b(water|river|well|container)\b/],['food',/\b(food|ration|meal|pantry|kitchen|store)\b/],['person',/\b(name|survivor|person|neighbor|voice|someone|they)\b/],['exit',/\b(exit|route|stairs|back door|yard|hallway)\b/],['sound',/\b(sound|scrape|footstep|noise|silence|quiet)\b/],['cover',/\b(cover|shadow|shelter|safe)\b/],['cache',/\b(cache|pack|supplies|medicine|first aid|ammo|weapon)\b/]];
+  for(const [name,pattern] of targets){if(pattern.test(text)){target=name;break}}
+  if(kind==='move'||kind==='drive')move='movement';if(kind==='observe')move='inspect';return `${kind}:${move}:${target}`;
+ }
+ connectAdaptiveBeat=function(beat){
+  beat=previousConnect(beat);if(!beat||beat._repeatGuardRevision===1)return beat;
+  const oldText=String(beat.prose||''),newText=keepNewSentences(oldText);
+  if(newText)beat.prose=newText;
+  else{const clock=document.querySelector('#gameClock time')?.textContent||'now';const place=state.lastPlace||'your current location';beat.prose=`The situation at ${place} has shifted by ${clock}. Your next move is still yours to choose.`;state.storySentenceHistory.push(sentenceKey(beat.prose))}
+  const prior=new Set(Array.isArray(state.lastBeatDirectionKeys)?state.lastBeatDirectionKeys:[]),within=new Set(),options=Array.isArray(beat.options)?beat.options:[],unique=[];
+  for(const option of options){const key=directionKey(option);if(prior.has(key)||within.has(key))continue;within.add(key);unique.push(option)}
+  const backup=[['Inspect a different exit from cover.','observe'],['Check your pack and set aside what you need.','search'],['Listen for a new sound before moving.','quiet'],['Contact someone you trust with one clear question.','social'],['Mark a route that stays within reach of cover.','track'],['Move to another protected spot in the same area.','move'],['Secure the nearest weak point.','build']];
+  for(const option of backup){if(unique.length>=Math.min(4,Math.max(3,options.length)))break;const key=directionKey(option);if(prior.has(key)||within.has(key))continue;within.add(key);unique.push(option)}
+  if(unique.length)beat.options=unique;
+  state.lastBeatDirectionKeys=unique.map(directionKey);beat._repeatGuardRevision=1;return beat;
+ };
+})();
 </script></body></html>
 
 
