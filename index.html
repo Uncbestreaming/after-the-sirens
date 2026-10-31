@@ -572,7 +572,7 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
 @media(max-width:390px){.brand h1{font-size:14px}.game-clock{font-size:10px}.game-clock small{font-size:9px}.brand-tools>span{display:none}.skillgrid{grid-template-columns:1fr}.choice{font-size:15px}.phone-dock:not([hidden]){grid-template-columns:1fr 1fr auto;gap:5px;padding-left:8px;padding-right:8px}.dock-button{padding:5px 6px;font-size:11px}}
 @media(max-width:760px) and (orientation:landscape) and (max-height:500px){.hero{margin:14px auto}.hero h2{font-size:40px}.help-dialog{max-height:90dvh}.phone-dock:not([hidden]){padding-top:5px;padding-bottom:calc(5px + env(safe-area-inset-bottom,0px))}}
 </style>
-</body></html>
+<script>(()=>{const toggle=document.querySelector("#voiceToggle"),note=document.querySelector("#voiceNote");if(!toggle||!note)return;toggle.setAttribute("aria-describedby","voiceNote");if(!(typeof window.speechSynthesis!=="undefined"&&typeof window.SpeechSynthesisUtterance!=="undefined")){toggle.disabled=true;note.setAttribute("role","status");note.textContent="Spoken narration is not available in this browser. Open the game in a browser with speech synthesis support to hear gender-matched narration."}})();</script></body></html>
 
 
 
