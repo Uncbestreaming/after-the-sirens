@@ -601,6 +601,11 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
  function paint(){toggle.textContent=enabled?'Music · On':'Music · Off';toggle.setAttribute('aria-pressed',String(enabled));toggle.setAttribute('aria-label',enabled?'Turn soundtrack off':'Turn soundtrack on');audio.volume=level}
  function loadTrack(index){trackIndex=(index+playlist.length)%playlist.length;audio.pause();audio.currentTime=0;audio.src=playlist[trackIndex].src;audio.load()}
  async function play(){if(!enabled||starting||!audio.paused)return;starting=true;try{await audio.play();if(status)status.textContent='Playing '+playlist[trackIndex].name+'.'}catch{if(status)status.textContent='Tap or click to start '+playlist[trackIndex].name+'.'}finally{starting=false}}
+ // Beat rendering only replaces #main. Keep the same audio element and playback
+ // position, and recover playback if the browser pauses it during a transition.
+ const keepSoundtrackAlive=()=>{if(enabled&&audio.paused&&!audio.ended)play()};
+ const storyPanel=document.querySelector('#main');
+ if(storyPanel)new MutationObserver(()=>queueMicrotask(keepSoundtrackAlive)).observe(storyPanel,{childList:true});
  toggle.addEventListener('click',()=>{enabled=!enabled;persist();paint();if(enabled){if(status)status.textContent='Starting '+playlist[trackIndex].name+'…';play()}else{audio.pause();loadTrack(0);if(status)status.textContent='Soundtrack off.'}});
  volume.addEventListener('input',()=>{level=Number(volume.value);audio.volume=level;persist();if(enabled&&audio.paused)play()});
  audio.addEventListener('ended',()=>{if(!enabled)return;loadTrack(trackIndex+1);if(status)status.textContent='Starting '+playlist[trackIndex].name+'…';play()});
@@ -608,6 +613,7 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
  audio.addEventListener('playing',()=>{if(status)status.textContent='Playing '+playlist[trackIndex].name+'.'});
  document.addEventListener('pointerdown',e=>{if(e.target.closest('#musicToggle'))return;if(enabled&&audio.paused)play()},{passive:true});
  document.addEventListener('keydown',e=>{if(e.target.closest('#musicToggle'))return;if(enabled&&audio.paused)play()});
+ window.addEventListener('pageshow',keepSoundtrackAlive);
  paint();if(enabled)play();
 })();
 </script>
