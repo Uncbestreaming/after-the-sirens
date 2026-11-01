@@ -797,6 +797,109 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
   return beat;
  };
 })();
+</script>
+<script>
+// Expand each beat with original, choice-aware narrative while keeping the
+// scene anchored to the player's current location and leaving the next move open.
+(()=>{
+ const previousStory=adaptiveStory;
+ const proseByAction={
+  radio:[
+   'The speaker gives a thin pop as the signal drops. The warning has left you with fragments to weigh, not a promise that anyone is coming.',
+   'Static fills the space after the transmission. You lower the volume enough to hear the room again, keeping the words you caught in mind.',
+   'The radio falls quiet. Its last burst of sound lingers in your ears while the ordinary noises around you return one by one.'
+  ],
+  build:[
+   'The final scrape of the barrier carries farther than you meant it to. You wait, listening for an answer from the other side.',
+   'Your hands ache from the effort. The entrance looks different now, but the rest of the room has not changed; you take a moment to check what the work cost.',
+   'The barrier settles with a small creak. Nothing tests it yet, and the pause leaves you time to notice the sounds beyond it.'
+  ],
+  observe:[
+   'You let your eyes adjust before trusting what you saw. Familiar shapes return first; the details that matter take longer.',
+   'A few seconds of watching reveal no certainty, only a clearer measure of distance and movement. You keep the view in mind.',
+   'You look again for the detail that first caught your attention. The scene stays still long enough for you to separate what you saw from what you feared.'
+  ],
+  peek:[
+   'From cover, the view is narrow but useful. You ease back before your outline can become part of the scene outside.',
+   'The glass throws a faint reflection of your face over the street. You shift aside and keep the view without giving anything outside a clear look in.',
+   'You hold still long enough to distinguish motion from the changing light. The window gives you a partial picture, nothing more.'
+  ],
+  social:[
+   'The other person takes time before answering. Their pause could mean caution, fear, or simply that they are listening for someone else too.',
+   'The exchange leaves a silence neither of you fills at once. You can hear the strain in the other voice, though it gives away little else.',
+   'The conversation has not settled what either of you wants. For now, you have heard one another, and both sides are still deciding how much to trust.'
+  ],
+  move:[
+   'You stop where your route ends and check the space you just crossed. The way back is still visible; no further distance passes while you take stock.',
+   'Your breathing settles by degrees. You have reached only the spot you chose, with the sounds behind you still close enough to remember.',
+   'You pause at the edge of the route. Dust and rain cling to your shoes, small evidence of the ground between here and where you began.'
+  ],
+  drive:[
+   'When the engine quiets, the change in sound makes the place around you easier to read. You stay beside the vehicle and take in what is actually here.',
+   'The vehicle rocks once as its weight settles. You check the surroundings from where you stopped; the journey ends at this chosen point.',
+   'The engine ticks as it cools. The silence around it is not complete, but you can now pick out the nearer sounds.'
+  ],
+  search:[
+   'Dust rises from the last place you checked and hangs in the light. You keep the useful finds separate from the things that looked promising but were not safe to take.',
+   'The search leaves drawers open and loose items shifted. You remember which spaces you checked, so the same room will not quietly refill itself.',
+   'You pause to count what is worth carrying. The room has given up what it had in reach; anything still hidden will take a closer look to find.'
+  ],
+  consume:[
+   'The first swallow or bite is plain, but your body notices it before your thoughts do. You remain in place while the immediate need eases.',
+   'You take the ration slowly and account for what it cost your supplies. It is a small relief, not a reason to stop paying attention.',
+   'The taste is familiar enough to steady you for a moment. You finish what you chose and keep the remaining supplies in mind.'
+  ],
+  care:[
+   'You finish the careful part before testing the injury. The treatment helps, though it cannot make the strain disappear at once.',
+   'The sting fades to a dull pull. You keep your movements measured and note how much of your first-aid supply remains.',
+   'The dressing holds when you shift your weight. You give it a moment, alert to any fresh pain that would change what you can manage.'
+  ],
+  quiet:[
+   'You give the silence time to change. A distant sound comes and goes, but nothing in the room forces an answer from you.',
+   'Your own breathing becomes the nearest sound. Beyond it, the pauses are still uneven, and you keep listening without committing to what they mean.',
+   'The quiet does not feel safe; it only gives you a chance to hear more. You stay where you are and let the next sound arrive on its own.'
+  ],
+  track:[
+   'You keep the fragments in order instead of filling the gaps with guesses. The information is more useful now, but it remains incomplete.',
+   'The marks and words form a tentative pattern. You treat it as a clue rather than proof, with no route chosen for you.',
+   'You compare what you know and leave the uncertain parts uncertain. A better picture may matter later, but this one is all you have for now.'
+  ],
+  fight:[
+   'The effort leaves your muscles tight and your hearing full of its own pulse. You check yourself for a wound before trusting the brief lull.',
+   'Your grip loosens only after you are sure the immediate struggle has stopped. The noise may have carried; nothing else has entered the scene yet.',
+   'The moment passes, but the cost remains in your arms and breath. You take stock of your weapon and your condition before doing anything else.'
+  ],
+  fire:[
+   'The shot cracks through the area and returns as a thin echo. You register the weapon’s recoil and the sudden attention the sound may bring.',
+   'The report leaves a sharp ring in your ears. You check your ammunition by feel and listen for any response, without assuming what the sound has reached.',
+   'For a beat, the gunshot seems to erase every smaller noise. Then the world returns in pieces, and you can judge only what is close enough to hear.'
+  ],
+  default:[
+   'The immediate result gives you something solid to work with. You take a breath, check your surroundings, and keep the unanswered parts in view.',
+   'You let the first reaction pass before judging what changed. The facts are limited, but they are yours to use when you decide what comes next.',
+   'A little time passes as you take stock of the room and your own condition. Nothing else is decided for you in the pause.'
+  ]
+ };
+ const kindFor=kind=>({peek:'peek',brace:'build',talk:'social',peek:'peek',move:'move',consume:'consume',care:'care',fire:'fire',drive:'drive',track:'track'}[kind]||kind);
+ const normalize=value=>String(value||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+ adaptiveStory=function(){
+  const beat=previousStory();
+  if(!beat||beat.kind==='opening'||!hero?.name)return beat;
+  const action=kindFor(state.lastActionKind||'default'),pool=proseByAction[action]||proseByAction.default;
+  const history=Array.isArray(state.storySentenceHistory)?state.storySentenceHistory:[];
+  const start=Math.abs(Number(adaptiveBeat)||0)%pool.length;
+  let passage='';
+  for(let i=0;i<pool.length;i++){
+   const candidate=pool[(start+i)%pool.length],key=normalize(candidate);
+   if(!history.includes(key)){passage=candidate;history.push(key);break}
+  }
+  if(!passage)passage=proseByAction.default[Math.abs(Number(adaptiveBeat)||0)%proseByAction.default.length];
+  state.storySentenceHistory=history.slice(-300);
+  if(passage&&!String(beat.prose||'').includes(passage))beat.prose=String(beat.prose||'')+'\n\n'+passage;
+  state.pendingAdaptive=adaptiveScene=beat;
+  return beat;
+ };
+})();
 </script></body></html>
 
 
