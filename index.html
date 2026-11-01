@@ -900,6 +900,107 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
   return beat;
  };
 })();
+</script>
+<script>
+// Replace broad fallback beats with scene-specific prose and choices that fit
+// the immediate situation and lead to matching action resolutions.
+(()=>{
+ const priorStory=adaptiveStory;
+ const scenes={
+  human:{
+   passages:[
+    'The person behind the cover shifts their weight. You hear a breath held too long, then released; fear is present, but it does not tell you what they intend.',
+    'A hand appears at the edge of the opening and withdraws. Whoever is there has heard you. The barrier stays between you while both of you decide what can safely be said.',
+    'The voice on the other side is quieter now. A small scrape follows it, as if they have moved something out of the way without stepping into view.'
+   ],
+   options:[['Give your name and ask who is behind the cover.','social'],['Ask what they need without opening the barrier.','social'],['Watch the opening and listen for anyone else.','observe'],['End the exchange and move to nearby cover.','move']]
+  },
+  infected:{
+   passages:[
+    'The infected turns toward the last sound, not toward the nearest movement. Its uneven steps make a slow rhythm against the hard ground, with a pause after every third drag.',
+    'Its clothes snag on the edge of the passage. It pulls free and keeps coming, unaware of the damage. The space between you is still measurable, but it is no longer generous.',
+    'The infected’s head tilts as another noise travels across the block. It has not stopped being dangerous; for this moment, its attention is divided.'
+   ],
+   options:[['Back behind solid cover and keep it in sight.','move'],['Close a door or barrier between you.','build'],['Stay still and wait for its attention to shift.','quiet'],['Fight only if it blocks your way out.','fight']]
+  },
+  signal:{
+   passages:[
+    'The transmission breaks at the same point each time. The repeated words sound deliberate, but the missing section could contain the warning that matters most.',
+    'A carrier tone rises beneath the static and fades. You can record what you heard; you cannot tell from the signal alone whether its source is safe.',
+    'The voice returns, thinner than before. It offers a fragment of information and no confirmation, leaving the rest for you to judge.'
+   ],
+   options:[['Write down the words and frequency you can verify.','track'],['Ask for one repeat, then stop transmitting.','radio'],['Listen through another signal cycle without answering.','quiet'],['Compare the message with a landmark from cover.','observe']]
+  },
+  supplies:{
+   passages:[
+    'The cache is smaller than it first looked. Loose packaging and dust show which places have already been checked; the remaining containers need a closer inspection.',
+    'You sort the useful weight from the clutter. The room will not replace what has been taken, and carrying everything would cost you speed.',
+    'A scuff mark crosses the dust beside the cache. It is too faint to identify who made it, but recent enough to make you listen before reaching again.'
+   ],
+   options:[['Search one unopened container in this room.','search'],['Check the cache for damaged seals or contamination.','observe'],['Pack only the supplies you can carry safely.','move'],['Watch the nearest entrance before continuing.','quiet']]
+  },
+  food:{
+   passages:[
+    'The package looks ordinary, which is not the same as safe. You check its seal and condition before deciding whether it belongs in your pack.',
+    'A cupboard door hangs open above the remaining food. The shelf is nearly bare; a few intact items are easy to miss behind the empty boxes.',
+    'The smell in the room is stale rather than rotten. It gives you no reliable date, so the wrapper and container have to answer what they can.'
+   ],
+   options:[['Check one unopened package for a sound seal.','observe'],['Search another cupboard in this same area.','search'],...(state.food>0&&state.hunger<75?[['Eat one ration from your pack.','consume']]:[]),['Carry the food to cover before sorting it.','move']]
+  },
+  water:{
+   passages:[
+    'The container catches a line of light, but clarity proves little. You look at the rim, the seal, and what may have touched the water before it reached you.',
+    'A slow drip marks time against the container. The source is close enough to inspect, though nothing about it guarantees the water is drinkable.',
+    'The water shifts when the container moves. A thin film clings to one side; you have no way to identify it by sight alone.'
+   ],
+   options:[['Inspect the container and source for contamination.','observe'],['Search nearby storage for sealed water.','search'],['Mark this source and note where it came from.','track'],...(state.water>0&&state.thirst<75?[['Drink from your sealed supply instead.','consume']]:[])]
+  },
+  shelter:{
+   passages:[
+    'The room offers cover, not certainty. You check the door, the nearest window, and the route back before letting yourself treat it as a place to pause.',
+    'A draft moves dust along the floor beneath the closed door. The shelter is quiet for now, and you can inspect it without assuming it will stay that way.',
+    'The walls mute the street but do not erase it. A dull impact travels through the structure, then nothing follows.'
+   ],
+   options:[['Check the nearest exit before settling in.','observe'],['Listen for movement beyond the walls.','quiet'],['Secure the entrance while keeping an exit clear.','build'],['Search this room for supplies without leaving it.','search']]
+  },
+  weather:{
+   passages:[
+    'Rain changes the sound of the block and makes the ground harder to read. Water gathers along the low edge of the street; the covered side remains visible.',
+    'A gust rattles loose metal overhead. The noise masks smaller sounds for a moment, but it also makes distance harder to judge.',
+    'Runoff carries grit toward the nearest drain. The route is still passable, though the surface offers less grip than it did a few minutes ago.'
+   ],
+   options:[['Check the raised route before crossing.','observe'],['Move along the covered side of this block.','move'],['Wait under cover and listen through the rain.','quiet'],['Mark the runoff and identify a safer crossing.','track']]
+  },
+  quiet:{
+   passages:[
+    'The pause gives the room its smaller sounds back: a pipe ticking, fabric settling, your own breath. None of them explains the scrape beyond the doorway.',
+    'The sound does not repeat at once. That delay is information, though not enough to prove the nearby space is empty.',
+    'You remain still long enough to notice how the noise changes with the wind. Something may be moving nearby, but you cannot yet place it.'
+   ],
+   options:[['Keep listening from the same cover.','quiet'],['Check the nearest doorway without crossing it.','observe'],['Secure the closest weak point.','build'],['Shift to the next covered spot in this area.','move']]
+  }
+ };
+ const historyKey=value=>String(value||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+ adaptiveStory=function(){
+  const beat=priorStory();
+  if(!beat||beat.kind==='opening'||!hero?.name)return beat;
+  const scene=scenes[beat.kind];
+  if(scene){
+   if(state.storyDepthLine){const old=String(state.storyDepthLine);beat.prose=String(beat.prose||'').replace('\n\n'+old,'');state.storyDepthLine=''}
+   const used=Array.isArray(state.storySentenceHistory)?state.storySentenceHistory:[];
+   const options=scene.passages;
+   const start=Math.abs(Number(adaptiveBeat)||0)%options.length;
+   let detail='';
+   for(let i=0;i<options.length;i++){const candidate=options[(start+i)%options.length];if(!used.includes(historyKey(candidate))){detail=candidate;used.push(historyKey(candidate));break}}
+   if(detail)beat.prose=String(beat.prose||'')+'\n\n'+detail;
+   state.storySentenceHistory=used.slice(-300);
+   const previousChoices=new Set(state.recentChoiceLabels||[]),pool=[...scene.options,...(Array.isArray(beat.options)?beat.options:[])],seen=new Set(),fresh=pool.filter(([label])=>{if(seen.has(label)||previousChoices.has(label))return false;seen.add(label);return true});
+   beat.options=fresh.length>=3?fresh.slice(0,4):pool.filter(([label],index)=>pool.findIndex(option=>option[0]===label)===index).slice(0,4);
+  }
+  state.pendingAdaptive=adaptiveScene=beat;
+  return beat;
+ };
+})();
 </script></body></html>
 
 
