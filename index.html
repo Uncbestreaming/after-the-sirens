@@ -749,6 +749,51 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
   if(choices[beat.kind]){const options=choices[beat.kind]();if(options?.length)beat.options=options}state.pendingAdaptive=adaptiveScene=beat;return beat
  };
 })();
+<script>
+// Add slow-burn suspense and a survivor's physical perspective to each new beat.
+(()=>{
+ const originalOpening=scenes.door.text;
+ scenes.door.text=()=>originalOpening()
+  .replace('You make coffee and turn on the television.','You make coffee and turn on the television. The first sip is too hot; you set the mug down and watch it tremble against the counter as a distant impact rolls through the neighborhood.')
+  .replace('The footage freezes on an emergency-room entrance.','The footage freezes on an emergency-room entrance. A nurse looks straight into the camera for one second before the picture breaks into static.')
+  .replace('The coffee cools. Outside, a horn sounds twice, then cuts off.','The coffee cools beside the remote. Outside, a horn sounds twice. A third note starts, falters, and stops. The television keeps speaking into the silence.');
+ const priorStory=adaptiveStory;
+ adaptiveStory=function(){
+  const beat=priorStory();
+  if(!hero?.name||!beat||beat.kind==='opening')return beat;
+  const time=document.querySelector('#gameClock time')?.textContent||'now';
+  if(state.storyDepthBeat!==adaptiveBeat){
+   const scenes={
+    human:['At @TIME@, the voice behind cover takes a shallow breath and holds it. Whoever is there heard you; the silence that follows is a decision.','The latch shifts once, then stops. The person on the other side is close enough to hear you breathe, and still has not opened the door.','A floorboard answers from behind the barrier. One person, perhaps. They stay out of sight.'],
+    infected:['At @TIME@, the infected drags one shoe across the pavement and stops. Its head turns toward the smallest sound, not the loudest one.','The figure’s sleeve catches on a splinter. It pulls free without looking down, then takes another uneven step toward the noise.','Its jaw works soundlessly. The only warning is the scrape of its heel as it tests the distance to your cover.'],
+    signal:['At @TIME@, the carrier tone returns at the same interval. That regular pause sounds less like weather and more like someone waiting for an answer.','A voice begins to speak, loses the first word, then repeats the street name. No one confirms that the route is safe.','The signal fades, but the receiver keeps a faint click in its speaker. Something is still transmitting on the band.'],
+    weather:['At @TIME@, rain taps the metal drain cover. Beneath it, water moves with a heavier sound than the runoff should make.','A paper cup drifts along the gutter and catches at the curb. The water keeps moving around it, carrying a thin sheen from the road.','Rain softens the street noise, but it also hides footsteps. You cannot tell whether the sound near the corner is water or someone shifting position.'],
+    shelter:['At @TIME@, the open doorway stays dark. The air at the threshold smells of wet plaster and something sharp, like recently used disinfectant.','The door moves inward a fraction, though no wind reaches the hall. Nothing follows it into view.','A loose chain taps once against the frame. No one answers when the building settles again.'],
+    supplies:['At @TIME@, the torn strap on the pack is still damp. Whatever left it here did not leave long ago, but the hallway gives no clue in which direction.','One zipper pull rests outside the pack, clean against the stained fabric. The smallest pocket remains closed.','The pack shifts when you touch it. Something hard inside knocks once against the floor, then stays still.'],
+    food:['At @TIME@, the sealed wrapper gives a quiet crackle when you move it. Somewhere nearby, a refrigerator motor starts and fails before it can settle into a hum.','The package is intact, but the pantry smells warm and stale. You cannot tell how long the power has been out.','A tin rolls a few inches and stops against your shoe. The sound seems louder than it should in the empty room.'],
+    water:['At @TIME@, the gutter drips into the container at an uneven pace. A clear surface can still hide whatever the runoff carried to it.','The waterline quivers after the last drop. Something dark clings to the underside of the lid.','The container is cold to the touch. The water inside is not moving, and the room offers no safe way to treat it yet.'],
+    quiet:['At @TIME@, the scrape stops just beyond the doorway. No footsteps follow. The pause is long enough to make leaving feel louder than staying.','A pipe ticks in the wall. Then comes the same scrape again, at the same distance. Whatever is nearby has not wandered off.','You hear fabric brush a surface outside the room, followed by a slow breath—or something close enough to mistake for one.']
+   };
+   const options=scenes[beat.kind]||scenes.quiet;
+   const candidates=options.map(line=>line.replace('@TIME@',time));
+   const used=Array.isArray(state.storySentenceHistory)?state.storySentenceHistory:[];
+   const normalize=value=>String(value).toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+   const start=Math.abs(Number(adaptiveBeat)||0)%candidates.length;
+   state.storyDepthLine='';
+   for(let i=0;i<candidates.length;i++){const line=candidates[(start+i)%candidates.length],key=normalize(line);if(!used.includes(key)){state.storyDepthLine=line;used.push(key);break}}
+   state.storySentenceHistory=used.slice(-240);
+   state.storyDepthBeat=adaptiveBeat;
+   const needLine=(state.health<38?'Your injury tightens when you move; there is less room now for a mistake.':(state.thirst??100)<28?'Your mouth is dry enough to make each breath feel deliberate.':(state.hunger??100)<28?'Hunger pulls at your focus, and small sounds take longer to sort out.':(state.sleep??100)<22?'Your attention slips for a second. You force yourself to count the details again.':'');
+   state.storyNeedLine=needLine;
+  }
+  const detail=state.storyDepthLine||'';
+  if(detail&&!String(beat.prose||'').includes(detail))beat.prose=String(beat.prose||'')+'\n\n'+detail;
+  const needLine=state.storyNeedLine||'';
+  if(needLine&&!String(beat.prose||'').includes(needLine))beat.prose=String(beat.prose||'')+'\n\n'+needLine;
+  state.pendingAdaptive=adaptiveScene=beat;
+  return beat;
+ };
+})();
 </script></body></html>
 
 
