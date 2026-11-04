@@ -895,6 +895,7 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
   }
   if(!passage)passage=proseByAction.default[Math.abs(Number(adaptiveBeat)||0)%proseByAction.default.length];
   state.storySentenceHistory=history.slice(-300);
+  state.lastEnginePassage=passage;
   if(passage&&!String(beat.prose||'').includes(passage))beat.prose=String(beat.prose||'')+'\n\n'+passage;
   state.pendingAdaptive=adaptiveScene=beat;
   return beat;
@@ -992,6 +993,7 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
    const start=Math.abs(Number(adaptiveBeat)||0)%options.length;
    let detail='';
    for(let i=0;i<options.length;i++){const candidate=options[(start+i)%options.length];if(!used.includes(historyKey(candidate))){detail=candidate;used.push(historyKey(candidate));break}}
+   state.lastSceneDetail=detail;
    if(detail)beat.prose=String(beat.prose||'')+'\n\n'+detail;
    state.storySentenceHistory=used.slice(-300);
    const previousChoices=new Set(state.recentChoiceLabels||[]),pool=[...scene.options,...(Array.isArray(beat.options)?beat.options:[])],seen=new Set(),fresh=pool.filter(([label])=>{if(seen.has(label)||previousChoices.has(label))return false;seen.add(label);return true});
@@ -1052,6 +1054,137 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
  paintAdaptive=function(){const result=oldPaint();const beat=state.pendingAdaptive||adaptiveScene||{};mountBeatVisual(beat.kind||'quiet',beat.title||'The next moment');return result};
  const oldShow=show;
  show=function(id){const result=oldShow(id);if(id==='door')mountBeatVisual('opening','The morning broadcast');else if(id==='death')mountBeatVisual('death','Your survival record');return result};
+})();
+</script>
+<script>
+// Compose the final passage from the actual outcome, the current scene, and
+// one relevant survivor detail. This replaces the stacked generic tail text.
+(()=>{
+ const previousStory=adaptiveStory;
+ const sceneWriting={
+  human:[
+   'The person keeps their weight behind the barrier. Their next breath is steadier, but they still have not stepped into view.',
+   'A sleeve brushes the other side of the door. The voice remains close; the space between you remains closed.',
+   'The pause lasts long enough for you to hear movement farther down the hall. The person at the door has heard it too.'
+  ],
+  infected:[
+   'The infected’s foot catches on the uneven ground, then drags free. It follows sound without understanding what it is following.',
+   'A loose thread swings from the infected’s sleeve each time it moves. The small motion is easier to track than its face.',
+   'Its attention shifts with the next noise in the area. The pause changes its focus; it does not make the threat harmless.'
+  ],
+  signal:[
+   'A strip of static masks the end of the message. You can keep the words you heard, but the missing part stays missing.',
+   'The receiver’s hiss settles into a steady band. No one confirms the message or explains what happened before it began.',
+   'The signal returns at the same volume. Whatever is transmitting has not supplied the detail that would make the message certain.'
+  ],
+  supplies:[
+   'Dust outlines the spaces already searched. The cache is finite, and the remaining containers need to be checked one at a time.',
+   'The pack shifts against your shoulder as the supplies settle. The room is unchanged, but you have a clearer count of what can be carried.',
+   'A torn label clings to one container. It offers no reliable clue about what is inside, so the seal matters more than the writing.'
+  ],
+  food:[
+   'The wrapper holds its shape when you press the seam. That is useful evidence, though it cannot tell you how the food was stored.',
+   'The room smells of cardboard and old grease. You separate the sealed items from anything that could contaminate the rest.',
+   'A date is printed under the fold, partly rubbed away. You can read enough to check it, not enough to make the decision automatic.'
+  ],
+  water:[
+   'A thin line of residue marks the inside of the container. Clear water would still need a trustworthy seal or treatment.',
+   'The container’s cap is dry around the threads. You inspect the source as well; one clean detail cannot establish that the water is safe.',
+   'Water taps against the side when the container shifts. The sound tells you how much is there, not whether it is drinkable.'
+  ],
+  shelter:[
+   'The walls soften the noise outside, but the door and windows still define the room’s weak points.',
+   'Dust moves beneath the door in a narrow line. The shelter offers a pause, not proof that nothing is nearby.',
+   'The room holds the day’s stale air. You can hear the building around it, one creak at a time.'
+  ],
+  weather:[
+   'Water follows the curb toward the low ground. The rain blurs distant detail while leaving nearby movement easier to hear.',
+   'A gust pushes grit across the pavement. The covered edge of the block remains visible through the rain.',
+   'The runoff changes direction around a drain cover. The crossing is still there; the footing is less certain.'
+  ],
+  quiet:[
+   'The room gives back its small noises: a pipe ticking, fabric settling, your breath. None explains the sound beyond the doorway.',
+   'Nothing repeats immediately. You have a little more information about the pause, but not enough to call the space clear.',
+   'The silence changes when the wind reaches the building. You keep the difference in mind without treating it as an answer.'
+  ]
+ };
+ const actionWriting={
+  radio:['The last tone fades from your ears. The message remains incomplete, with no confirmed destination attached to it.','The receiver clicks softly as the signal drops. You keep the useful fragments separate from what you could not verify.'],
+  build:['Your hands stay tense after the work. The barrier has changed the room; only a later test can show how much it will hold.','The frame gives a faint vibration beneath your palm. You notice the pressure point without mistaking a quiet moment for a secure one.'],
+  observe:['The detail you noticed is clearer now, though its meaning is still uncertain. You keep the view in mind instead of filling in the gaps.','Your eyes return to the same point. Nothing new confirms your first impression, so you leave it as a possibility.'],
+  peek:['You ease away from the glass and keep the view in memory. The narrow angle showed only what fit inside it.','The reflection disappears when you shift aside. You have seen part of the street, not the whole of it.'],
+  social:['The other person leaves a pause after their answer. You can hear the strain in their voice without knowing what they will do next.','Your words have reached them. The silence afterward belongs to both of you, and neither side has committed to more.'],
+  move:['You stop at the place your action named. The route behind you remains close enough to retrace; no further distance passes in the pause.','Your breathing settles after the move. You take stock from this spot before deciding whether to go farther.'],
+  drive:['The engine ticks as it cools. Its sound has stopped, leaving you able to judge the nearer noises around the vehicle.','The vehicle settles on its suspension. You have reached the destination you chose and can assess it before going anywhere else.'],
+  search:['You keep the useful finds separate from damaged packaging. The room will not replenish what has been taken.','The last item goes into your pack. You remember which places were checked, so another search has to look somewhere new.'],
+  consume:['The food or water eases one immediate need. The lighter supply and the brief relief are both part of the count.','You finish what you took and remain where you were. The next few minutes are clearer, though the need will return.'],
+  care:['The treatment settles against the injury. Pain remains, but you can judge the wound without rushing your hands.','You check that the dressing stays in place when you shift. The kit has less to offer now, and the injury still needs watching.'],
+  quiet:['You hold still long enough to hear the pauses between nearby sounds. Nothing in them proves the space is empty.','Your breathing becomes the nearest sound. You let the quieter moment pass without assigning it a meaning.'],
+  track:['You keep the evidence in order and the uncertain parts marked as uncertain. A clue can narrow a question without answering it.','The details form a tentative pattern. You do not turn that pattern into a route until it supports one.'],
+  fight:['Your grip loosens as the immediate struggle ends. The strain stays in your arms, and the noise may have carried beyond this spot.','Your pulse takes longer to settle than the encounter did. You check your condition before trusting the lull.'],
+  fire:['The report leaves a ring in your ears. You can count the ammunition spent; you cannot yet know what heard it.','The recoil passes through your wrist. The echo thins out, but the area has not answered yet.'],
+  default:['You take a breath and separate what changed from what is still unknown. The next decision remains yours.','The immediate result gives you a fact to work with, not a conclusion about everything around you.']
+ };
+ const normalize=value=>String(value||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+ const genericLines=[
+  'The immediate task is done. You stay in the same place, and the next decision is yours.',
+  'The barrier holds for now. You remain where you secured it, with the room quiet on the other side.',
+  'You reach only the place your action named. The next step is still yours to choose.',
+  'You stop at the place you chose. The route behind you remains open; nothing carries you farther.',
+  'The sound you followed gives you information, not a new destination.',
+  'The transmission ends without naming a safe address. You have a clue to weigh, not an order to follow it.',
+  'The exchange ends where it began. The other person has not moved you elsewhere.',
+  'The conversation stops at the same doorway. The other person waits for your next move; they have not agreed to go anywhere.',
+  'You hold your position and let the immediate sounds settle.',
+  'You have a direction to consider, not an obligation to follow it.',
+  'You finish tending to the immediate injury before deciding what comes next.',
+  'You finish the food or water you chose and remain in the current scene.',
+  'The immediate result is clear; nothing else happens until you choose your next action.',
+  'The immediate result is clear. The scene stays where it is until you choose another action.',
+  'The next move remains open; nothing in the scene has decided it for you.'
+ ];
+ function freshLine(pool,key){
+  if(!pool?.length)return'';
+  const history=Array.isArray(state.storySentenceHistory)?state.storySentenceHistory:[];
+  const start=(Math.abs(Number(adaptiveBeat)||0)+String(key||'').length)%pool.length;
+  for(let i=0;i<pool.length;i++){const line=pool[(start+i)%pool.length],normalized=normalize(line);if(!history.includes(normalized)){history.push(normalized);state.storySentenceHistory=history.slice(-360);return line}}
+  return pool[start];
+ }
+ function conditionLine(){
+  if(state.health<35)return 'The injury pulls when you move; you have less room for a mistake.';
+  if((state.thirst??100)<28)return 'Your mouth is dry, and the effort of sorting sounds takes concentration.';
+  if((state.hunger??100)<28)return 'Hunger makes it harder to hold your attention on small details.';
+  if((state.sleep??100)<22)return 'Fatigue blurs the edges of the room; you make yourself check each detail twice.';
+  return'';
+ }
+ function perspectiveLine(kind){
+  if(hero.job==='healthcare'&&['human','infected','water','food'].includes(kind))return 'You look for observable signs before deciding what they mean; the cause remains unconfirmed.';
+  if(hero.job==='trades'&&['shelter','supplies','quiet'].includes(kind))return 'Wear around the frame shows where pressure has fallen before. The structure offers a clue, not a guarantee.';
+  if(hero.job==='security'&&['human','infected','quiet'].includes(kind))return 'You keep the nearest exit in view while tracking the threat’s attention.';
+  if(hero.job==='driver'&&['weather','signal','shelter'].includes(kind))return 'You notice the approach and the way back before judging the place ahead.';
+  if(hero.job==='service'&&['food','supplies','human'].includes(kind))return 'You sort what is useful from what only looks reassuring at first glance.';
+  if(hero.job==='office'&&['signal','human','supplies'].includes(kind))return 'You separate what was said or marked from what still needs confirmation.';
+  if(hero.job==='education'&&['human','shelter','quiet'].includes(kind))return 'You keep the exchange simple enough to follow, even with the noise outside.';
+  return'';
+ }
+ adaptiveStory=function(){
+  const beat=previousStory();
+  if(!beat||beat.kind==='opening'||!hero?.name)return beat;
+  let base=String(beat.prose||'');
+  for(const old of [state.lastOutcome,state.lastEnginePassage,state.lastSceneDetail,state.storyDepthLine,state.storyNeedLine])if(old)base=base.replaceAll(String(old),'');
+  for(const line of genericLines)base=base.replaceAll(line,'');
+  base=base.replace(/\n\s*\n+/g,'\n\n').trim();
+  const paragraphs=base.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean).slice(0,2);
+  const outcome=String(state.lastOutcome||'').trim(),kind=beat.kind,action=state.lastActionKind||'default';
+  const response=freshLine(actionWriting[action]||actionWriting.default,`action:${action}`);
+  const scene=freshLine(sceneWriting[kind]||sceneWriting.quiet,`scene:${kind}`);
+  const perspective=perspectiveLine(kind),condition=conditionLine();
+  const finished=[outcome,...paragraphs,response,scene,perspective,condition].filter(Boolean);
+  const seen=new Set();
+  beat.prose=finished.map(p=>p.split(/(?<=[.!?])\s+/).filter(sentence=>{const key=normalize(sentence);if(!key||seen.has(key))return false;seen.add(key);return true}).join(' ')).filter(Boolean).join('\n\n');
+  state.pendingAdaptive=adaptiveScene=beat;
+  return beat;
+ };
 })();
 </script></body></html>
 
