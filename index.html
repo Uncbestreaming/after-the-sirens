@@ -1006,47 +1006,19 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
 </script>
 <style>
 .beat-visual{position:relative;margin:0 0 21px;overflow:hidden;border:1px solid #465148;border-radius:4px;background:#0c1110;aspect-ratio:16/6;min-height:145px;max-height:290px}
-.beat-visual img{display:block;width:100%;height:100%;object-fit:cover}
+.beat-visual img{display:block;width:100%;height:100%;object-fit:cover;transition:filter .4s ease}.beat-visual[data-phase="night"] img{filter:brightness(.68) saturate(.82)}
 .beat-visual figcaption{position:absolute;left:0;right:0;bottom:0;padding:24px 14px 9px;background:linear-gradient(transparent,#080c0be8);color:#d7ddcd;font:10px/1.3 Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase}
 @media(max-width:600px){.beat-visual{aspect-ratio:16/9;min-height:150px;margin-bottom:16px}.beat-visual figcaption{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.beat-visual img{animation:none}}
 </style>
 <script>
-// Small original vector artwork for every story beat; no external image fetches.
+// Original, optimized photographs mapped to their scene type.
 (()=>{
- const palettes={
-  opening:['#28383a','#101817','#d8a86c'],human:['#302e35','#111416','#c98461'],
-  infected:['#283235','#101718','#b9bb83'],signal:['#27383a','#101817','#8fbd99'],
-  supplies:['#33342e','#111713','#c3ad79'],food:['#3b342a','#111714','#d6b273'],
-  water:['#24383c','#101819','#8fc4c1'],shelter:['#34342e','#101613','#c6b08a'],
-  weather:['#28363c','#101518','#99b8bd'],quiet:['#302f34','#111416','#a69d90'],
-  death:['#242b2b','#090d0d','#987568']
- };
- const subjects={
-  opening:'<path d="M570 74h202v128H570z" fill="#18211e" stroke="#c0ad8c" stroke-width="5"/><path d="M588 92h166v85H588z" fill="#72807a"/><path d="M598 152l37-30 29 22 24-17 50 38H598z" fill="#252e2a"/><rect x="190" y="166" width="130" height="44" rx="5" fill="#332d26"/><path d="M212 165v-18q0-23 43-23t43 23v18" fill="none" stroke="#b58855" stroke-width="4"/><path d="M245 120c-8-12 8-13 0-24m20 24c-8-12 8-13 0-24" fill="none" stroke="#ddd0ac" stroke-width="3" opacity=".6"/>',
-  human:'<path d="M603 55h172v161H603z" fill="#171c1a" stroke="#aa9d84" stroke-width="7"/><circle cx="680" cy="120" r="20" fill="#b77f65"/><path d="M637 193q4-58 43-58t43 58" fill="#343a34"/><path d="M577 217h224" stroke="#c1ad88" stroke-width="5"/>',
-  infected:'<path d="M693 70q-25 4-31 34l-16 31 13 13-18 57 22 6 22-43 13 43 23-3-8-70 20-28-17-36z" fill="#7f8771"/><circle cx="680" cy="98" r="20" fill="#92947e"/><path d="M668 99h6m15 0h6" stroke="#292e2a" stroke-width="4"/><path d="M645 121l-31 24m75-19 28 19" stroke="#7f8771" stroke-width="12" stroke-linecap="round"/>',
-  signal:'<rect x="605" y="104" width="155" height="106" rx="9" fill="#252d29" stroke="#98a58d" stroke-width="5"/><rect x="625" y="122" width="68" height="44" rx="3" fill="#7f9b83"/><path d="M634 146h11l9-14 11 26 9-12h12" fill="none" stroke="#d8e0c9" stroke-width="3"/><circle cx="720" cy="141" r="8" fill="#c28a62"/><path d="M669 104l25-51m-2 2q52 11 56 55" fill="none" stroke="#aab69b" stroke-width="4"/>',
-  supplies:'<path d="M584 137l92-54 103 54v76H584z" fill="#504939" stroke="#c0ad83" stroke-width="5"/><path d="M676 84v127m-91-73h195" stroke="#b7a67d" stroke-width="4"/><path d="M633 127h24v24h-24zm64 23h27v27h-27z" fill="#89917b"/>',
-  food:'<path d="M604 124h54v86h-54zM674 101h56v109h-56zM741 139h42v71h-42z" fill="#9c8157" stroke="#dfc993" stroke-width="4"/><path d="M604 143h54m16-18h56m11 31h42" stroke="#302e25" stroke-width="8"/><circle cx="631" cy="169" r="10" fill="#d5c18d"/><path d="M693 153h17m-17 13h17" stroke="#ddd0a7" stroke-width="4"/>',
-  water:'<path d="M644 74h78l-7 127q-1 11-12 11h-41q-12 0-13-11z" fill="#628b88" fill-opacity=".7" stroke="#b8d4c6" stroke-width="5"/><path d="M659 74V57h48v17" fill="none" stroke="#c1cdb2" stroke-width="7"/><path d="M650 151q34-15 67 0v39h-67z" fill="#8cc0b8" fill-opacity=".6"/><path d="M752 97c0 13-16 25-16 37a16 16 0 0 0 32 0c0-12-16-24-16-37z" fill="#9fc8bb"/>',
-  shelter:'<path d="M590 210V107l92-65 105 65v103z" fill="#3b4038" stroke="#aa9d82" stroke-width="5"/><path d="M653 210v-74h70v74" fill="#171d19" stroke="#c1ad8c" stroke-width="5"/><path d="M681 177h8m-8 17h8" stroke="#cfb48c" stroke-width="4"/><path d="M582 112l99-70 114 70" fill="none" stroke="#cfb48c" stroke-width="6"/>',
-  weather:'<path d="M0 205q140-33 274 0t275 0 371 0v90H0z" fill="#273331"/><path d="M610 215q27-73 69-54 24-48 55-8 42-4 50 62" fill="#52605a"/><path d="M617 77l-30 57m78-80-31 63m93-70-30 62m77-42-30 61m89-52-29 61" stroke="#a8c2bf" stroke-width="4" opacity=".7"/><path d="M542 233q98-27 197 0" fill="none" stroke="#8db7b3" stroke-width="5"/>',
-  quiet:'<path d="M588 57h185v164H588z" fill="#161c1b" stroke="#918d7d" stroke-width="6"/><path d="M626 221V88h113v133" fill="#2e3530" stroke="#b6a88a" stroke-width="5"/><path d="M681 97v123" stroke="#9b927d" stroke-width="4"/><path d="M688 153q19 5 15 30l-8 28h-17l-4-29q-3-23 14-29z" fill="#121817"/><circle cx="685" cy="139" r="12" fill="#121817"/>',
-  death:'<path d="M585 214V112l90-60 101 60v102z" fill="#272e29" stroke="#8e8c7a" stroke-width="5"/><path d="M647 214v-75h60v75" fill="#111615"/><path d="M245 195h80m-40-40v80" stroke="#937967" stroke-width="4" opacity=".7"/>'
- };
- function sceneSvg(kind){
-  const key=palettes[kind]?kind:(kind==='infected'?'infected':'quiet'),[top,bottom,accent]=palettes[key];
-  const day=storyLightPhase()==='day',sky=day?'#807d6a':top,light=day?'#d2bd8d':'#d8dfc9';
-  const skyline='<path d="M0 208V126h55V91h47v76h48V113h61v82h42V76h59v118h49V108h68v100h42V87h61v112h50v-74h68v82h55v-96h58v102h43v-83h51v91z" fill="#151b19" opacity=".92"/><g fill="#a7a081" opacity=".42"><path d="M65 112h9v12h-9zm20 0h9v12h-9zm90 18h9v12h-9zm21 0h9v12h-9zm188-30h9v12h-9zm19 0h9v12h-9zm189 8h9v12h-9zm20 0h9v12h-9z"/></g>';
-  const id='bg'+Math.abs((Number(adaptiveBeat)||0)*7+String(kind).length);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 290" role="img"><defs><linearGradient id="${id}" x2="0" y2="1"><stop stop-color="${sky}"/><stop offset="1" stop-color="${bottom}"/></linearGradient><radialGradient id="glow${id}"><stop stop-color="${accent}" stop-opacity=".5"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></radialGradient></defs><rect width="1000" height="290" fill="url(#${id})"/><ellipse cx="505" cy="130" rx="400" ry="145" fill="url(#glow${id})"/><circle cx="176" cy="70" r="26" fill="${light}" opacity=".65"/><path d="M0 224q170-38 330 0t330 0 340 0v66H0z" fill="#111715"/>${skyline}<path d="M0 241q150-20 300 0t300 0 400 0" fill="none" stroke="${accent}" stroke-opacity=".25" stroke-width="3"/>${subjects[key]||subjects.quiet}<path d="M0 275h1000" stroke="#9b947b" stroke-opacity=".24" stroke-width="2"/></svg>`
- }
- function mountBeatVisual(kind,title){
+ const visualAssets={opening:'assets/beat-opening.jpg',human:'assets/beat-human.jpg',infected:'assets/beat-infected.jpg',signal:'assets/beat-signal.jpg',supplies:'assets/beat-supplies.jpg',food:'assets/beat-food.jpg',water:'assets/beat-water.jpg',shelter:'assets/beat-shelter.jpg',weather:'assets/beat-weather.jpg',quiet:'assets/beat-quiet.jpg',death:'assets/beat-death.jpg'}; function mountBeatVisual(kind,title){
   const panel=document.querySelector('#main');if(!panel)return;
   panel.querySelector('.beat-visual')?.remove();
   const figure=document.createElement('figure');figure.className='beat-visual';
-  const img=document.createElement('img');img.alt=`Scene illustration: ${title||kind}`;img.loading='eager';img.decoding='async';img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(sceneSvg(kind));
+  const img=document.createElement('img');img.alt=`Scene illustration: ${title||kind}`;img.loading='eager';img.decoding='async';img.src=visualAssets[kind]||visualAssets.quiet;figure.dataset.phase=storyLightPhase();
   const caption=document.createElement('figcaption');caption.textContent=`${title||'The scene'} · ${storyLightPhase()==='day'?'Daylight':'Night'} · ${survivorLocation()}`;
   figure.append(img,caption);const chapter=panel.querySelector('.chapter');if(chapter)chapter.before(figure);else panel.prepend(figure);
  }
