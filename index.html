@@ -1063,8 +1063,9 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
   if(!scored.length)return'';
   let choices=scored.filter(row=>!history.includes(row.idea.id));
   if(!choices.length){history.length=0;choices=scored}
-  const best=scored[0].score, top=choices.filter(row=>row.score>=best-1).slice(0,5);
-  const pick=top[(Math.max(0,Number(adaptiveBeat)||0)+String(topic).length)%top.length].idea;
+  const best=choices[0].score, top=choices.filter(row=>row.score>=best-1).slice(0,5);
+  const pool=top.length?top:choices;
+  const pick=pool[(Math.max(0,Number(adaptiveBeat)||0)+String(topic).length)%pool.length].idea;
   history.push(pick.id);state.storyIdeaHistory=history.slice(-80);
   return pick.text;
  }
