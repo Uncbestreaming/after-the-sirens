@@ -1255,6 +1255,50 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
   state.pendingAdaptive=adaptiveScene=beat;return beat;
  };
 })();
+</script>
+<script>
+// Ink/Twine-inspired fallback: prefer a contextual continuation; reuse a
+// choice only when its scene action is still a sensible option.
+(()=>{
+ const baseStory=adaptiveStory;
+ const usable={
+  human:[['Ask what the person needs before deciding whether to help.','social'],['Offer your name, then ask what they heard.','social'],['Listen for movement before answering again.','quiet'],['Step away from the doorway without opening it.','move']],
+  infected:[['Hold cover and wait for the infected to move out of view.','quiet'],['Check the nearest route around it.','observe'],['Secure the closest barrier.','build'],['Back away along the route you came.','move']],
+  signal:[['Write down the words you heard and mark what is uncertain.','track'],['Retune briefly for a repeat of the message.','radio'],['Compare the signal with a landmark you can see.','observe'],['Wait for another transmission before choosing a route.','quiet']],
+  supplies:[['Check a different container in this same room.','search'],['Count what you found before packing it.','observe'],['Listen for movement outside before continuing.','quiet'],['Leave the searched space by the nearest covered exit.','move']],
+  food:[['Check the seal and date before keeping the food.','observe'],['Look in a different cupboard in this room.','search'],['Ask the nearby survivor whether they recognize the packaging.','social'],['Keep the food closed and return to cover.','move']],
+  water:[['Inspect the cap and source before drinking.','observe'],['Look for a sealed container nearby.','search'],['Ask who last used the water source.','social'],['Carry a small amount to cover for treatment.','move']],
+  shelter:[['Check the latch without opening the door.','observe'],['Listen for movement beyond the wall.','quiet'],['Secure the nearest weak point.','build'],['Ask once whether anyone inside needs help.','social']],
+  quiet:[['Wait for the sound to repeat from the same position.','quiet'],['Check the nearest doorway without crossing it.','observe'],['Secure the closest weak point.','build'],['Shift to cover within this area.','move']],
+  weather:[['Check the nearest elevated path for debris.','observe'],['Move along the sheltered side of the block.','move'],['Watch the runoff before crossing.','quiet'],['Find a dry place nearby to check supplies.','shelter']]
+ };
+ function normalizeChoice(s){return String(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim()}
+ adaptiveStory=function(){
+  const beat=baseStory();if(!beat||beat.kind==='opening'||beat.kind==='death'||!Array.isArray(beat.options))return beat;
+  const previous=new Set(state.recentChoiceLabels||[]),pool=usable[beat.kind]||usable.quiet,seen=new Set(),fresh=[];
+  for(const option of [...beat.options,...pool]){
+   if(!Array.isArray(option)||!option[0])continue;
+   const key=normalizeChoice(option[0]);if(seen.has(key))continue;seen.add(key);
+   if(!previous.has(option[0]))fresh.push(option);
+   if(fresh.length===4)break;
+  }
+  // Allow a repeated choice only if it is still the only reasonable action in this scene.
+  if(fresh.length<2){for(const option of [...beat.options,...pool])if(Array.isArray(option)&&option[0]&&fresh.length<3&&!fresh.some(x=>normalizeChoice(x[0])===normalizeChoice(option[0])))fresh.push(option)}
+  beat.options=fresh.length?fresh:pool.slice(0,3);
+  const text=String(beat.prose||'').toLowerCase();
+  if(beat.kind==='human'&&state.lastActionKind==='social'&&!/“[^”]+”/.test(text)){
+   const intent=state.lastActionIntent||{},npc=typeof getGeneratedNpc==='function'?getGeneratedNpc(state.activeNpcId||'neri'):null;
+   let reply='“I heard you,” the voice says. “I’m still deciding what that means.”';
+   if(intent.asksName&&npc?.reply)reply=npc.reply;
+   else if(intent.offerTrade)reply='“Tell me what you can spare first,” the survivor says. “Then I’ll tell you what I can.”';
+   else if(intent.focus==='medicine'||intent.questionType==='injury')reply='“I’m hurt, but I can answer you,” the survivor says. “Ask what you need to know.”';
+   else if(intent.questionType==='threat')reply='“I heard it too,” the voice says. “I can’t tell you how close.”';
+   else if(intent.introducesName)reply=`“${hero.name},” the voice repeats. “All right. I’m listening.”`;
+   beat.prose=String(beat.prose||'')+'\n\n'+reply;
+  }
+  state.pendingAdaptive=adaptiveScene=beat;return beat;
+ };
+})();
 </script></body></html>
 
 
