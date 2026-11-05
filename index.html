@@ -1194,6 +1194,67 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
   return beat;
  };
 })();
+</script>
+<script>
+// Novel-style choice response: deepen the beat from the action just taken,
+// while keeping time, location, danger, and outcomes inside the existing game rules.
+(()=>{
+ const previousStory=adaptiveStory;
+ const actionTraits={social:'connection',talk:'connection',care:'care',consume:'care',search:'practicality',build:'protection',observe:'caution',peek:'caution',track:'patience',quiet:'patience',radio:'curiosity',move:'resolve',drive:'resolve',fight:'resolve',fire:'resolve'};
+ const reflections={
+  connection:['You chose to risk being heard. The answer you received matters less than the fact that you left room for one.','You made contact without surrendering your caution. Trust, if it comes, will have to earn its place.','For a moment, survival meant another person. You do not yet know what that will cost.'],
+  care:['You spent time on what could still be saved. The choice says something about the person you were before this morning.','You treated the immediate need first. It is a small act of control in a day that keeps taking choices away.','The care you gave is practical, not a promise. Still, you made it count.'],
+  practicality:['You counted what remained before reaching for more. The habit may matter when guessing becomes expensive.','You kept the useful things and left the rest. There is discipline in knowing what your pack can carry.','You made the room give up only what it had. Nothing here is endless now.'],
+  protection:['You put effort into buying a little time. It is not safety, but it gives the next decision a firmer place to stand.','You chose to protect the space around you. The cost is time; the benefit has yet to be tested.','You made one weak point harder to use. The rest of the room still needs watching.'],
+  caution:['You trusted what you could see and left the rest uncertain. That restraint keeps a guess from becoming a mistake.','You looked before committing. The view was narrow, but it was yours to judge.','You did not let fear fill in what the evidence could not show.'],
+  patience:['You gave the moment time to reveal its pattern. Waiting has a cost, but so does acting on the first explanation.','You held your position and let the small sounds separate. The patience does not make the danger disappear.','You chose not to turn uncertainty into motion. For now, that decision keeps you here.'],
+  curiosity:['You followed the information as far as it went. What remains unknown is still yours to weigh.','You looked for a signal in the noise. A fragment can help, but it cannot make a decision for you.','You kept listening after the easy answer failed to arrive.'],
+  resolve:['You acted, then stopped where your choice ended. The next risk is still ahead of you, not already decided.','You committed to the move you chose and took stock before doing more.','You spent effort to change the immediate problem. The rest of the situation remains open.']
+ };
+ const tension={
+  human:['A pause follows from the other side. It is long enough to make you wonder whether the person is choosing words—or listening for something behind you.','The voice falls quiet. Somewhere beyond this room, a sound answers with no words at all.','Neither of you speaks for a second. The silence leaves the door between you and whatever waits beyond it.'],
+  infected:['The infected shifts toward the last sound. Its attention has moved, not vanished; one careless noise could bring it back.','A scrape travels across the nearby surface. You cannot tell whether it is leaving or only changing its angle.','The threat remains close enough to matter. You have a moment to think, not proof that the danger has passed.'],
+  signal:['Static fills the space where a clear answer should be. The message gives you something to consider and nothing you can trust blindly.','The receiver quiets, but the information does not become more certain for being repeated.','The signal breaks apart again. Whatever sent it has not given you a reason to move yet.'],
+  shelter:['The room stays still around you. A small sound from the building is enough to remind you that cover has limits.','The barrier holds for this moment. You listen for the test it has not faced yet.','Outside, the day continues without telling you whether anyone has noticed this place.'],
+  quiet:['The pause does not answer the question. You stay with the evidence you have and let the next decision remain yours.','Nothing confirms the worst possibility, but nothing rules it out either.','The room gives no clear sign. You keep your attention on what actually changes.']
+ };
+ const dialogue={
+  name:['“Call me '+(state.activeNpcName||'Mara')+',” the voice says. “That is all I can promise you yet.”','“Mara,” comes the answer after a beat. “You can decide later whether that means anything.”'],
+  injury:['“It hurts,” the person says. “I can still move. Don’t make the decision for me.”','“I’m hurt, not helpless.” The voice tightens. “Tell me what you can actually do.”'],
+  threat:['“I heard it too,” the voice says. “How close do you think it is?”','“Don’t call it safe,” the person answers. “Call it quiet, and keep listening.”'],
+  supplies:['“I have a little,” the voice says. “Not enough to waste, and not enough to fix this for both of us.”','“If we trade, we count everything first.” The answer is cautious, but it is an answer.'],
+  signal:['“I only caught part of it,” the voice says. “If you heard more, say exactly what—not what you think it meant.”','“That signal could be real,” comes the reply. “Could be. I’m done betting on could.”'],
+  motive:['“Because being alone stopped feeling like a plan,” the voice says. “That’s the honest answer I have.”','“I want to get through the next hour,” the person says. “Ask me again when I know more.”'],
+  general:['“I don’t know,” the voice says. “I’d rather tell you that than make something up.”','“One thing at a time,” comes the reply. “We have enough trouble with the things we can prove.”']
+ };
+ function pick(pool,key){if(!pool?.length)return'';const history=Array.isArray(state.novelLineHistory)?state.novelLineHistory:[];let hash=0;for(const c of String(key||''))hash=(hash*31+c.charCodeAt(0))>>>0;let index=hash%pool.length;for(let n=0;n<pool.length;n++){const line=pool[(index+n)%pool.length],tag=line.toLowerCase();if(!history.includes(tag)){history.push(tag);state.novelLineHistory=history.slice(-120);return line}}return pool[index]}
+ adaptiveStory=function(){
+  const beat=previousStory();if(!beat||beat.kind==='opening'||beat.kind==='death'||!hero?.name)return beat;
+  const token=String(adaptiveBeat)+'|'+String(state.lastActionText||state.lastActionKind||'');
+  if(state.novelStyleToken===token)return beat;
+  state.novelStyleToken=token;
+  const action=String(state.lastActionKind||'default'),kind=String(beat.kind||'quiet'),intent=state.lastActionIntent||{};
+  const trait=actionTraits[action]||'patience';state.narrativeTraits??={};state.narrativeTraits[trait]=(state.narrativeTraits[trait]||0)+1;
+  const tendency=state.narrativeTraits[trait]>=2?({connection:'You have begun to make room for other people in your decisions, even when trust is still uncertain.',care:'You keep choosing to spend effort on people and needs that can still be helped.',practicality:'You are learning to count what remains before the next problem arrives.',protection:'You keep trying to buy time by making the immediate space harder to breach.',caution:'You have learned to leave a question open when the evidence is thin.',patience:'You are learning that waiting can be an action, provided you keep paying attention.',curiosity:'You keep following useful information without letting it choose your route.',resolve:'You are finding a rhythm: act on the problem in front of you, then stop and reassess.'})[trait]:'';
+  let prose=String(beat.prose||'').trim();
+  const npc=typeof getGeneratedNpc==='function'?getGeneratedNpc(state.activeNpcId||'neri'):null;
+  const spoken=action==='social'||Boolean(intent.questionType)||Boolean(intent.asksName)||Boolean(intent.introducesName);
+  if(spoken&&kind==='human'&&!/[“\"][^”\"]+[”\"]/.test(prose)){
+   const topic=intent.questionType|| (intent.asksName?'name':'general');
+   const bank=dialogue[topic]||dialogue.general;
+   const line=topic==='name'&&npc?.reply?npc.reply:pick(bank,token+'|dialogue|'+topic);
+   prose+=(prose?'\n\n':'')+line;
+   if(topic==='name'&&!state.activeNpcName)state.activeNpcName=npc?.name||'Neri Voss';
+  }
+  const reflection=pick(reflections[trait],token+'|reflection|'+trait);
+  const threat=pick(tension[kind]||tension.quiet,token+'|tension|'+kind);
+  const added=[reflection,tendency,threat].filter(Boolean);
+  const seen=new Set();
+  prose=prose.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>p.split(/(?<=[.!?])\s+/).filter(sentence=>{const key=sentence.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();if(!key||seen.has(key))return false;seen.add(key);return true}).join(' ')).filter(Boolean).join('\n\n');
+  beat.prose=[prose,...added].filter(Boolean).join('\n\n');
+  state.pendingAdaptive=adaptiveScene=beat;return beat;
+ };
+})();
 </script></body></html>
 
 
