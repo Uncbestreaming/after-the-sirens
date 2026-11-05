@@ -703,7 +703,7 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
 (()=>{
  const baseIntent=actionIntent,baseRoomTarget=roomSearchTarget;
  function firstClause(value){const full=String(value||'').trim();let clause=full.split(/\s*(?:;|,\s*then\b|\bthen\b|\bafter that\b)\s*/i)[0]||full;const parts=clause.split(/\band\b/i);const verbs=/^(?:then\s+)?(?:i\s+)?(?:am\s+)?(?:secure|lock|wedge|barricade|repair|check|inspect|look|listen|wait|hide|sneak|move|go|head|leave|run|search|scavenge|loot|forage|find|track|follow|call|ask|tell|offer|trade|drink|eat|take|use|grab|pick|open|close|turn|lower|raise|shoot|fire|fight|attack|treat|bandage|heal|drive|start|mark|record|write|signal|tune|retune|reload|aim|scan|peek|survey)\b/i;if(parts.length>1&&verbs.test(parts[1].trim()))clause=parts[0].trim();return clause||full}
- actionIntent=function(value){const full=String(value||''),primary=firstClause(full),all=baseIntent(full),main=baseIntent(primary);return{...all,place:main.place||all.place,focus:main.focus||all.focus,primary,raw:full.toLowerCase()}};
+ actionIntent=function(value){const full=String(value||''),primary=firstClause(full),all=baseIntent(full),main=baseIntent(primary);return{...all,place:all.place||main.place,focus:main.focus||all.focus,primary,raw:full.toLowerCase()}};
  roomSearchTarget=function(value){if(actionKind(value)!=='search')return'';return baseRoomTarget(value)};
 })();
 </script>
