@@ -15,7 +15,7 @@
 .soundtrack-control{display:grid;grid-template-columns:auto minmax(100px,132px);align-items:center;gap:4px 9px;padding:7px 9px;border:1px solid var(--line);background:#111713;border-radius:3px}.music-toggle{min-height:32px;border:1px solid var(--accent);background:#252d25;color:var(--ink);padding:6px 9px;border-radius:3px;font:700 10px Arial,sans-serif;white-space:nowrap}.music-toggle[aria-pressed="false"]{border-color:var(--line);color:var(--muted)}.music-volume{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px;color:var(--muted);font:9px Arial,sans-serif;text-transform:uppercase;letter-spacing:.08em}.music-volume input{width:100%;padding:0;margin:0;accent-color:var(--accent)}.soundtrack-status{grid-column:1/-1;min-height:11px;color:var(--muted);font:9px/1.2 Arial,sans-serif;letter-spacing:.02em;text-transform:none}.soundtrack-status:empty{display:none}#storyMusic{display:none}@media(max-width:760px){.brand-tools{flex-wrap:wrap;justify-content:flex-end;gap:7px}.soundtrack-control{grid-template-columns:auto minmax(86px,112px);padding:5px 7px;gap:3px 6px}.music-toggle{min-height:40px;padding:7px 8px}.music-volume{font-size:8px;gap:4px}.music-volume input{min-height:24px}.soundtrack-status{font-size:8px}}
 </style></head>
 <body><div class="shell"><header class="brand"><h1>After the Sirens</h1><div class="brand-tools"><span>A choice-driven survival story</span><div id="gameClock" class="game-clock" aria-label="Story time"><time>6:30 AM</time><small class="clock-date"></small><span class="clock-phase">DAYLIGHT</span></div><div class="soundtrack-control" id="soundtrackControl"><button type="button" class="music-toggle" id="musicToggle" aria-pressed="true">Music · On</button><label class="music-volume" for="musicVolume"><span>Volume</span><input id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.28" aria-label="Soundtrack volume"></label><span class="soundtrack-status" id="musicStatus" aria-live="polite">Tap or click to start the soundtrack.</span><audio id="storyMusic" preload="none" playsinline></audio></div><button type="button" class="help-open" id="helpOpen" aria-haspopup="dialog" aria-controls="howToPlay">How to play</button></div></header><div class="help-backdrop" id="howToPlay" hidden><section class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="helpTitle" tabindex="-1"><button type="button" class="help-close" id="helpClose" aria-label="Close how to play">×</button><h2 id="helpTitle">How to play</h2><p>Your choices shape a continuing survival story. Read the scene, check your field notes, then decide what to do.</p><div class="help-grid"><article class="help-card"><h3>Build your survivor</h3><p>Choose a name, age, identity, work background, home or apartment, and whether you own a firearm. Pick exactly five of the 15 skills; they can reveal details and change which actions are safer.</p></article><article class="help-card"><h3>Choose or improvise</h3><p>Click an offered action to take it, or type your own action in the Improvise box. The next passage responds to what you tried and the current situation.</p></article><article class="help-card"><h3>Watch your needs</h3><p>Water and food supplies are finite. Drink and eat from the field notes to raise Thirst and Hunger. Their meters slowly fall with time and activity; the status colors shift from green to yellow, orange, and red.</p></article><article class="help-card"><h3>Recover health</h3><p>Eating or drinking restores a small amount of Health when both need meters are above 35%. Filling both Thirst and Hunger together restores Health to full. Health at zero ends the run.</p></article><article class="help-card"><h3>Search places</h3><p>Use Search room to look for supplies without advancing the current beat. Each room has a limited cache, so repeated searches eventually find nothing more there.</p></article><article class="help-card"><h3>Manage weapons</h3><p>Click a weapon in the Arsenal to equip it before choosing or typing an action. Weapons, ammunition, skills, injuries, hunger, and thirst affect dangerous encounters.</p></article><article class="help-card"><h3>Read the situation</h3><p>Work experience, selected skills, and your home type affect what you notice and which options appear. Characters can react to your actions and remember conversations.</p></article><article class="help-card"><h3>Time, rest, and saves</h3><p>The clock advances with your actions and shows daylight or night. Sleep falls with time and exertion. In a secure location, the yellow Take a nap button appears when Sleep reaches 50% or lower. A nap advances four hours and restores sleep; thirst and hunger continue to fall. Save now stores your game in this browser; Resume save restores it on this device.</p></article><article class="help-card"><h3>Voice and sounds</h3><p>Use the Soundtrack control beside the clock to play Sanity Unravels followed by Night of the Creeps on repeat, adjust volume, or turn music off. It stays available while you play. If playback does not begin automatically, tap Music · On. For text-to-speech, turn on Read story aloud in Your Field Notes to hear the introduction and each new passage. Your selected gender sets the preferred narration voice when your browser provides one. Use Replay passage to hear the current scene again, Pause voice to pause or resume it, or turn Read story aloud off to stop narration. Voice availability depends on your browser. Soft typing and choice sounds play after you interact with the page.</p></article><article class="help-card"><h3>Keep going</h3><p>Check supplies and equipment before risky moves. There is no fixed victory ending—the story keeps creating the next beat from your decisions.</p></article></div></section></div><section class="hero"><div class="eyebrow">Choose your location · Day One · 6:30 a.m.</div><h2>The quiet is<br>the warning.</h2><p>Sirens ran all night. At 6:30 a.m., you wake, make coffee, and turn on the news. A male anchor warns of riots and a possible infection. Your choices shape what happens next.</p></section><div class="layout"><main id="main" class="panel" aria-live="polite"></main><aside class="sidebar"><h3>Your field notes</h3><div id="profile" class="profile">Your survivor profile will appear here.</div><div id="stats"></div><div id="arsenal"></div><div class="savebox"><div class="saveBtns"><button class="btn secondary" id="saveBtn" onclick="saveGame()" disabled>Save now</button><button class="btn secondary" id="resumeBtn" onclick="resumeGame()" disabled>Resume save</button></div><div id="saveStatus" class="small">Saves stay in this browser on this device.</div></div><label class="toggle"><input id="voiceToggle" type="checkbox"> Read story aloud</label><p id="voiceNote" style="margin-top:8px">Voice narration uses speech voices installed in your browser.</p><h3>About this story</h3><p>This story is set in a world on day one of a Zombie Apocalypse. Stock your food, grab your weapons, form a crew and do whatever you need to do to survive After the Sirens</p></aside></div><footer class="small" style="text-align:center;margin-top:28px">An original work of fiction · No choice is guaranteed safe</footer></div>
-<script src="./assets/story-idea-bank.js?v=1"></script>
+<script src="./assets/story-idea-bank.js?v=1"></script><script src="./assets/zombie-brain.js?v=1"></script>
 <script>
 'use strict';
 // Worldbuilding boundary: use the supplied guide only for broad undead lore and consistency rules. Keep all story events, character names, actions, and locations original; never adapt or transplant the guide's set pieces.
@@ -25,7 +25,7 @@ const main=document.querySelector('#main'),esc=x=>String(x).replace(/[&<>"']/g,c
 const SAVE_KEY='afterTheSirensSaveV1';
 function storedGame(){try{const raw=localStorage.getItem(SAVE_KEY);return raw?JSON.parse(raw):null}catch{return null}}
 function refreshSaveControls(){const saved=storedGame(),save=document.querySelector('#saveBtn'),resume=document.querySelector('#resumeBtn'),status=document.querySelector('#saveStatus');if(save)save.disabled=!hero||!hero.name;if(resume)resume.disabled=!(saved&&saved.hero&&saved.state);if(status&&!saved)status.textContent='Saves stay in this browser on this device.'}
-function saveGame(){try{if(!hero||!hero.name)return;const record={version:2,hero,state,currentScene,adaptiveBeat,adaptiveRecent,adaptiveScene,savedAt:new Date().toISOString()};localStorage.setItem(SAVE_KEY,JSON.stringify(record));const status=document.querySelector('#saveStatus');if(status)status.textContent=`Saved on this device · Day ${state.daysSurvived||1}`;refreshSaveControls()}catch(e){const status=document.querySelector('#saveStatus');if(status)status.textContent='This browser could not store a save.'}}
+function saveGame(){try{if(!hero||!hero.name)return;const record={version:3,hero,state,currentScene,adaptiveBeat,adaptiveRecent,adaptiveScene,savedAt:new Date().toISOString()};localStorage.setItem(SAVE_KEY,JSON.stringify(record));const status=document.querySelector('#saveStatus');if(status)status.textContent=`Saved on this device · Day ${state.daysSurvived||1}`;refreshSaveControls()}catch(e){const status=document.querySelector('#saveStatus');if(status)status.textContent='This browser could not store a save.'}}
 function migrateSavedGame(record){
  hero={...record.hero};state={...record.state};
  hero.name=String(hero.name||'Survivor');hero.age=Number(hero.age)||30;hero.race??='Prefer not to say';hero.job??='other';hero.city??='';hero.stateName??='';hero.gender??='unspecified';hero.stake??='';hero.housing??=hero.homeType==='home'?'home':'apartment';hero.gunOwner??=/handgun|shotgun|rifle/i.test(String(state.weapon||''));hero.skills=Array.isArray(hero.skills)?hero.skills:[];
@@ -1308,7 +1308,147 @@ connectAdaptiveBeat=function(beat){const result=connectBeatWithSourceChoices(bea
 </script><script>
 // Keep home prose and choices tied to the selected house; offer boarding only as a player action.
 (()=>{const atHouse=()=>hero?.housing==='home'&&(currentScene==='door'||adaptiveBeat===0||/your house|your home|the (?:front hall|back entry|entry hall|porch|yard|kitchen|pantry|bedroom|bathroom|closet|attic|basement|garage)/i.test(String(state?.lastPlace||''))||/\bHOME\b/i.test(document.querySelector('.chapter')?.textContent||'')||/\binside your house\b/i.test(document.querySelector('.story')?.textContent||''));const houseText=value=>String(value??'').replace(/\binside the building\b/gi,'inside the house').replace(/\bthis building\b/gi,'this house').replace(/\bthe building around you\b/gi,'the house around you').replace(/\bthe building answers\b/gi,'the house answers').replace(/\bthe building settles\b/gi,'the house settles').replace(/\bthe building noise\b/gi,'the sounds in the house').replace(/\bthe building\b/gi,'the house');const prior=adaptiveStory;adaptiveStory=function(){const beat=prior();if(!beat)return beat;if(atHouse()){beat.title=houseText(beat.title);beat.prose=houseText(beat.prose);if(Array.isArray(beat.options)&&!beat.options.some(([label])=>/board up/i.test(label)))beat.options.push(['Board up one exposed window, leaving a clear way out.','build'])}return beat};const text=sceneText;sceneText=function(id,scene){return atHouse()?houseText(text(id,scene)):text(id,scene)}})();
+</script>
+<style>
+.freeform-row{display:grid;grid-template-columns:minmax(92px,130px) minmax(0,1fr) auto;gap:8px;align-items:stretch;margin-top:8px}
+.freeform-row select{padding:9px 10px;font:12px Arial,sans-serif}
+.freeform-row input{min-width:0}
+.freeform-caption{font:11px/1.45 Arial,sans-serif;color:var(--muted);margin-top:8px}
+@media(max-width:600px){.freeform-row{grid-template-columns:1fr}.freeform-row .btn{width:100%;min-height:46px}}
+</style>
+<script>
+// AI Dungeon-inspired freeform play: retain the player's exact intent and
+// let the existing survival engine resolve it against the current situation.
+(()=>{
+ const helpCopy=document.querySelector('#howToPlay .help-card:nth-child(2) p');
+ if(helpCopy)helpCopy.textContent='Choose an offered action or write your own. In the freeform box, Do describes an action, Say starts a conversation, and Story lets you describe your approach. The game carries that intent into the next passage and resolves it against your location, skills, supplies, people, and current danger.';
+ const modeLabels={do:'Describe an action',say:'Write what you say',story:'Describe your approach'};
+ function mountFreeform(){
+  const input=document.querySelector('#freeAction');if(!input)return;
+  input.maxLength=300;input.setAttribute('aria-label','Write a freeform action, dialogue, or approach');
+  const row=input.parentElement;if(!row)return;row.classList.add('freeform-row');
+  let select=document.querySelector('#freeActionMode');
+  if(!select){select=document.createElement('select');select.id='freeActionMode';select.setAttribute('aria-label','Freeform input mode');select.innerHTML='<option value="do">Do</option><option value="say">Say</option><option value="story">Story</option>';row.insertBefore(select,input);}
+  select.value=state.freeformMode||'do';
+  const updateHint=()=>{input.placeholder=modeLabels[select.value]+'…';state.freeformMode=select.value};
+  select.onchange=updateHint;updateHint();
+  let caption=row.parentElement.querySelector('.freeform-caption');
+  if(!caption){caption=document.createElement('div');caption.className='freeform-caption';caption.textContent='Freeform story mode · Your words guide the next beat; danger, time, and supplies still follow the game state.';row.insertAdjacentElement('afterend',caption)}
+ }
+ const oldPaint=paintAdaptive;
+ paintAdaptive=function(){const result=oldPaint.apply(this,arguments);mountFreeform();return result};
+ tryAdaptive=function(){
+  const input=document.querySelector('#freeAction'),raw=String(input?.value||'').trim();if(!raw)return;
+  const mode=document.querySelector('#freeActionMode')?.value||'do';
+  state.freeformMode=mode;state.lastFreeformMode=mode;
+  state.freeformHistory=Array.isArray(state.freeformHistory)?state.freeformHistory:[];
+  state.freeformHistory.push({mode,text:raw.slice(0,300),beat:adaptiveBeat,day:state.daysSurvived||1,place:state.lastPlace||''});
+  state.freeformHistory=state.freeformHistory.slice(-30);
+  const area=roomSearchTarget(raw),moves=/\b(?:walk|move|head|go|enter|step|travel|drive|run|cross|leave)\b/i.test(raw);
+  if(area&&!moves){searchCurrentRoom(area);return}
+  const kind=mode==='say'?'social':actionKind(raw);
+  state.lastFreeformIntent=raw.slice(0,300);
+  resolveAdaptive(raw,mode==='say'?'social':(area&&moves?'move':actionKind(raw)),true);
+  typedAct=tryAdaptive;
+  saveGame();
+ };
+ const beforeStory=adaptiveStory;
+ adaptiveStory=function(){
+  const beat=beforeStory.apply(this,arguments);
+  if(!beat||!state.lastActionWasTyped||!state.lastFreeformIntent||state.freeformNarrativeBeat===adaptiveBeat)return beat;
+  const mode=state.lastFreeformMode||'do',raw=String(state.lastFreeformIntent).trim();
+  const quoted=raw.replace(/[“”]/g,'"').replace(/[<>]/g,'').slice(0,260);
+  const place=String(state.lastPlace||'your current position');
+  let passage='';
+  if(mode==='say'){
+   const contact=(state.npcContacts||{})[state.activeNpcId||'neri']||{};
+   if(beat.kind==='human'&&contact.met)passage=`You keep your voice low and say, “${quoted}” The survivor has heard the words; what they do with them depends on what has already passed between you.`;
+   else if(beat.kind==='opening')passage=`You say, “${quoted}” No one answers immediately. The room and the warning on the television remain unchanged while you wait for a response.`;
+   else passage=`You say, “${quoted}” Your voice carries only as far as the cover at ${place}; the next sound tells you whether anyone heard.`;
+  }else{
+   let action=quoted.replace(/^(?:i|we)\s+/i,'').replace(/\bmy\b/gi,'your').replace(/\bme\b/gi,'you');
+   action=action.charAt(0).toLowerCase()+action.slice(1).replace(/[.!?]+$/,'');
+   if(/^(?:you\s)/i.test(action))action=action.replace(/^you\s+/i,'');
+   passage=mode==='story'?`You commit to this approach: ${action}. The scene responds to the attempt, while its outcome remains bound to what you can reach and what the situation allows.`:`You ${action}. At ${place}, the attempt draws an immediate response from the situation; the details that follow reflect the risks and resources already in play.`;
+   if(beat.kind==='infected'&&/\b(shoot|fire|gun|rifle|shotgun)\b/i.test(raw)&&Number(state.ammo||0)<=0)passage+=' The weapon has no ammunition, so the plan cannot produce a shot.';
+   if(beat.kind==='infected'&&/\b(shoot|fire|gun|rifle|shotgun)\b/i.test(raw)&&Number(state.ammo||0)>0)passage+=' The shot costs a round and adds to the noise drawing attention nearby.';
+  }
+  beat.prose=[passage,String(beat.prose||'')].filter(Boolean).join('\n\n');
+  state.freeformNarrativeBeat=adaptiveBeat;state.pendingAdaptive=adaptiveScene=beat;return beat;
+ };
+ const oldShow=show;
+ show=function(id){const result=oldShow.apply(this,arguments);if(id==='door'&&state?.health>0){if(!main.querySelector('#freeAction'))main.insertAdjacentHTML('beforeend','<div class="note" id="openingFreeform"><b>Write your own action</b><div style="margin:6px 0 10px;color:var(--muted)">Choose how to enter your intent. The story begins from what you decide to do here.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="freeAction" maxlength="300" placeholder="Describe an action…" onkeydown="if(event.key===\'Enter\'){event.preventDefault();tryAdaptive()}" style="flex:1;min-width:200px"><button class="btn" onclick="tryAdaptive()">Try it →</button></div></div>');mountFreeform()}return result};
+})();
+</script>
+<script>
+// Adapt ZombieBrain to the existing save, scene, and choice systems.
+(()=>{
+ let engine=null;
+ const getBrain=()=>{if(typeof AfterSirensZombieBrain!=='function')throw new Error('The survival logic engine did not load.');if(!engine||engine.state!==state)engine=new AfterSirensZombieBrain(state);return engine};
+ const statusError=message=>{const el=document.querySelector('#saveStatus');if(el)el.textContent=message};
+ const oldMigrate=migrateSavedGame;
+ migrateSavedGame=function(record){
+  if(!record||!record.hero||typeof record.hero!=='object'||Array.isArray(record.hero)||!record.state||typeof record.state!=='object'||Array.isArray(record.state))throw new Error('Save data is missing a valid character or game state.');
+  const version=Number(record.version||1);if(!Number.isInteger(version)||version<1)throw new Error('Save version is invalid.');if(version>3)throw new Error('This save was created by a newer version of After the Sirens.');
+  oldMigrate.apply(this,arguments);engine=null;getBrain();return state;
+ };
+ const oldSave=saveGame;
+ saveGame=function(){try{if(hero?.name)getBrain();return oldSave.apply(this,arguments)}catch(error){statusError('Save could not be prepared: '+error.message)}};
+ const oldResume=resumeGame;
+ resumeGame=function(){
+  const prior={hero,state,currentScene,adaptiveBeat,adaptiveRecent,adaptiveScene};
+  try{const record=storedGame();if(!record){statusError('No readable save was found in this browser.');return false}migrateSavedGame(record);oldResume.apply(this,arguments);getBrain();return true}
+  catch(error){hero=prior.hero;state=prior.state;currentScene=prior.currentScene;adaptiveBeat=prior.adaptiveBeat;adaptiveRecent=prior.adaptiveRecent;adaptiveScene=prior.adaptiveScene;engine=null;statusError('Save could not be resumed: '+error.message);return false}
+ };
+ const oldBegin=begin;
+ begin=function(){const result=oldBegin.apply(this,arguments);engine=null;getBrain();saveGame();return result};
+ const oldActionKind=actionKind;
+ actionKind=function(action){const text=String(action||'').toLowerCase();if(/\b(share|give|offer|refuse|deny|keep)\b.{0,55}\b(food|ration|meal|suppl)\b/.test(text)&&/\b(with|to|from|for|them|her|him|survivor|neighbor|person)\b/.test(text))return'social';return oldActionKind.apply(this,arguments)};
+ const oldResolve=resolveAdaptive;
+ resolveAdaptive=function(action,kind,typed,skillOverride){
+  const roomTarget=roomSearchTarget(action);if(roomTarget&&kind!=='move'&&kind!=='drive')return oldResolve.apply(this,arguments);
+  const brain=getBrain(),encounter=adaptiveScene?.kind||state.lastEncounterKind||'opening',context=`scene:${currentScene}|beat:${adaptiveBeat}|encounter:${encounter}|kind:${kind}|action:${String(action||'').trim().toLowerCase()}|typed:${!!typed}|mode:${state.lastFreeformMode||''}`;
+  const id=brain.eventId(context),npcId=adaptiveScene?.npcId||state.activeNpcId||'';
+  const result=brain.applyChoice({id,action:String(action||''),kind,encounter,npcId,day:state.daysSurvived||1,ammoAvailable:kind==='fire'&&isFirearm(state.equipped)&&state.ammo>0,allowResourceTransfer:!(typed&&state.lastFreeformMode==='say')});
+  if(result.duplicate)return result;
+  state.currentZombieEventId=id;state.lastZombieDecision=result;state.zombieBrain.narrativeBeat=adaptiveBeat+1;
+  const z=state.zombieBrain.zombies;state.noise=Math.max(Number(state.noise)||0,Math.min(3,Math.floor(z.alert/30)));
+  if(result.event.effects.food)state.log.unshift('You share one ration; '+(getGeneratedNpc?.(npcId)?.name||'the survivor')+' remembers the help.');
+  state._resolvingZombieChoice=true;
+  try{return oldResolve.apply(this,arguments)}finally{state._resolvingZombieChoice=false}
+ };
+ // Non-passage controls also receive stable event IDs and remain in the same save.
+ const oldSearch=searchCurrentRoom;
+ searchCurrentRoom=function(area){const brain=getBrain(),place=canonicalRoomKey(area||state.lastPlace),attempt=brain.data.eventSequence+1,key=`room-search:${adaptiveBeat}:${place}:attempt:${attempt}`,id=brain.eventId(key);brain.applyChoice({id,action:'Search '+(area||state.lastPlace||'this room'),kind:'search',encounter:adaptiveScene?.kind||state.lastEncounterKind||'opening',day:state.daysSurvived||1});return oldSearch.apply(this,arguments)};
+ const oldConsume=consumeSupply;
+ consumeSupply=function(kind,deferSave){const before=kind==='water'?state.water:state.food,result=oldConsume.apply(this,arguments);if(result&&before>(kind==='water'?state.water:state.food)&&!state._resolvingZombieChoice){const brain=getBrain(),id=brain.eventId(`consume:${adaptiveBeat}:${kind}:${before}`);brain.applyChoice({id,action:kind==='water'?'Drink water':'Eat food',kind:'consume',encounter:adaptiveScene?.kind||state.lastEncounterKind||'opening',day:state.daysSurvived||1})}return result};
+ const oldNap=takeNap;
+ takeNap=function(){if(!state?.safeRoom||state.health<=0||(state.sleep??100)>50)return oldNap.apply(this,arguments);const brain=getBrain(),id=brain.eventId(`nap:${adaptiveBeat}:${state.hours}`);if(state.zombieBrain.processedEventIds.includes(id))return;brain.applyChoice({id,action:'Take a nap in the secure room',kind:'quiet',encounter:adaptiveScene?.kind||state.lastEncounterKind||'opening',day:state.daysSurvived||1});return oldNap.apply(this,arguments)};
+ const oldAct=act;
+ act=function(key,skill,label){if(key==='nextDay'){const brain=getBrain(),id=brain.eventId(`wait:${currentScene}:${adaptiveBeat}:${state.hours}`);if(!state.zombieBrain.processedEventIds.includes(id))brain.applyChoice({id,action:'Wait briefly and listen',kind:'quiet',encounter:adaptiveScene?.kind||state.lastEncounterKind||'opening',day:state.daysSurvived||1})}return oldAct.apply(this,arguments)};
+ const oldResolveDaily=resolveDaily;
+ resolveDaily=function(key,skill,label){const scene=dailyScene(),phase=(state.dayEventIndex||0)%4,kind=key==='dailyFight'?'fight':key==='dailyTalk'?'social':key==='dailyHide'?'quiet':key==='dailyShelter'?'build':key==='dailySearch'?'search':'move',encounter=/toll collectors|armed scavengers/i.test(scene.title+' '+String(typeof scene.text==='function'?scene.text():scene.text||''))?'human':/dead|infected|horde|zombie/i.test(scene.title+' '+String(typeof scene.text==='function'?scene.text():scene.text||''))?'infected':'quiet',npcId=encounter==='human'?'daily_scavengers':'',brain=getBrain(),id=brain.eventId(`daily:${state.daysSurvived}:${phase}:${key}`),result=brain.applyChoice({id,action:label||key,kind,encounter,npcId,day:state.daysSurvived||1,ammoAvailable:kind==='fight'&&isFirearm(state.equipped)&&state.ammo>0,allowResourceTransfer:false});if(result.duplicate)return result;state.currentZombieEventId=id;state.lastZombieDecision=result;const z=state.zombieBrain.zombies;state.noise=Math.max(Number(state.noise)||0,Math.min(3,Math.floor(z.alert/30)));if(result.event.effects.zombieAlert>0&&z.alert>=30)state.log.unshift('Your choice raised the dead’s alertness. They are '+brain.zombieBehavior(state.noise)+'.');if(result.event.npcId)state.log.unshift('The scavengers remember how you handled the encounter.');const resultDaily=oldResolveDaily.apply(this,arguments);saveGame();return resultDaily};
+ const oldStory=adaptiveStory;
+ adaptiveStory=function(){
+  const beat=oldStory.apply(this,arguments);if(!beat)return beat;
+  const ext=state.zombieBrain,ev=ext?.lastEvent;if(!ev||ext.narrativeBeat!==adaptiveBeat||ext.narratedEventId===ev.id)return beat;
+  const bits=[];
+  if(ev.npcId&&ev.encounter==='human'){
+   const c=state.npcContacts?.[ev.npcId],npc=getGeneratedNpc?.(ev.npcId),name=npc?.name||'the survivor';
+   if(c?.memories?.length>1){const memory=c.memories[c.memories.length-2];bits.push(`${name} remembers that ${memory.text}. Their response carries that history.`)}
+   bits.push(`${name}'s current stance: ${({panic:'fear has overtaken caution',refuse:'trust is thin and help may be refused',protect_player:'they are willing to protect you',cooperate:'they are cautious but willing to cooperate',unavailable:'they are unavailable'})[getBrain().npcDecision(ev.npcId)]||'they are deciding what to do'}.`)
+  }
+  if(ev.effects.zombieAlert>0&&ext.zombies.alert>=35)bits.push(`The noise has raised the nearby dead's alertness. They are ${getBrain().zombieBehavior(state.noise)}; the next loud move may bring them closer.`);
+  if(ev.effects.zombieAlert<0)bits.push(`You keep the noise down. The dead have less to follow, though they have not disappeared.`);
+  if(bits.length)beat.prose=String(beat.prose||'')+'\n\n'+bits.join(' ');
+  ext.narratedEventId=ev.id;state.pendingAdaptive=adaptiveScene=beat;return beat;
+ };
+ // Existing opening button used a stale alias; point it at the current mode-aware handler.
+ typedAct=tryAdaptive;
+ try{getBrain()}catch(error){console.error('ZombieBrain initialization:',error)}
+})();
 </script></body></html>
+
 
 
 
