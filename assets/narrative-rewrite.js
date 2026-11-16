@@ -43,6 +43,59 @@ water:["You check the water before deciding whether to drink or carry it. A cont
 quiet:["The pause lets you notice what the noise had hidden: a distant scrape, a settling hinge, your own breathing. You are still where you were.","For a few seconds, nothing demands an answer. Quiet does not mean danger is gone; it gives you a chance to decide what matters first.","You hold still and listen. The surroundings offer clues, not guarantees. When you move again, the direction is yours."]
 };
 const H={opening:["The Warning Holds","Morning, Unanswered","Before the First Move"],human:["A Voice Keeps Its Distance","Terms Through the Door","Someone Listening"],infected:["Attention Turns","The Dead Close In","A Narrow Opening"],signal:["Another Fragment","The Frequency Returns","Words in the Static"],weather:["The Street Changes","A Harder Route","Weather at the Threshold"],shelter:["A Place to Pause","The Door Holds","Cover, for Now"],supplies:["The Search Ends Here","What This Room Held","A Finite Find"],food:["A Small Ration","Food Within Reach","The Next Meal"],water:["Measured Carefully","Water to Carry","A Safer Measure"],quiet:["The Pause","A Little Silence","Listening Again"]};
-const oldText=typeof sceneText==="function"?sceneText:window.sceneText;if(typeof oldText==="function"){const rewrittenText=function(id,scene){const r=S[id];return r?(typeof r[1]==="function"?r[1]():r[1]):oldText.apply(this,arguments)};try{sceneText=rewrittenText}catch(e){}window.sceneText=rewrittenText;}
-const old=typeof adaptiveStory==="function"?adaptiveStory:window.adaptiveStory;if(typeof old==="function"){const rewrittenStory=function(){const x=old.apply(this,arguments);if(!x)return x;const s=typeof state!=="undefined"?state:(window.state||{}),id=typeof currentScene!=="undefined"?currentScene:window.currentScene,k=K[id]||x.kind||"quiet",b=B[k]||B.quiet,a=String(s.lastOutcome||s.lastAction||""),p=String(s.lastPlace||s.currentPlace||""),n=Math.max(0,Number(s.rewriteCount)||0),key=[id,k,n,a,p].join("|");if(s.rewriteKey===key)return x;let d=[];if(a)d.push(a);const c=s.activeNpcId&&(s.npcContacts||{})[s.activeNpcId];if(c&&k==="human"){if(c.trust<=20)d.push("They remain guarded; trust is low.");else if(c.trust>=70)d.push("They answer with more ease than before.");if(c.memories?.length>1&&c.memories.at(-2)?.text)d.push("They remember "+c.memories.at(-2).text+".")}if(k==="infected"&&s.zombieBrain?.zombies)d.push(Number(s.zombieBrain.zombies.alert)>=70?"The nearby dead are highly alert.":"The dead have reacted to the disturbance.");if(k==="supplies"&&s.lastSearchFound)d.push("The items from this finite search have been added to your supplies.");if(s.hunger<35)d.push("Hunger is making concentration harder.");if(s.thirst<35)d.push("Thirst makes the next decision less comfortable.");if(s.sleep<35)d.push("Lack of sleep dulls your focus.");const day=Math.max(1,Number(s.daysSurvived||s.day||1));x.title=(H[k]||H.quiet)[n%3];x.prose=b[(n*7+a.length+p.length)%b.length]+(d.length?"\n\n"+d.join(" "):"")+(p?" You remain at "+p+".":"")+" Day "+day+" continues.";x.kind=k;s.rewriteKey=key;s.rewriteCount=n+1;return x};try{adaptiveStory=rewrittenStory}catch(e){}window.adaptiveStory=rewrittenStory;}
+const oldText=typeof sceneText==="function"?sceneText:window.sceneText;if(typeof oldText==="function"){const rewrittenText=function(id,scene){const r=S[id];if(!r)return oldText.apply(this,arguments);if(scene)scene.title=r[0];return typeof r[1]==="function"?r[1]():r[1]};try{sceneText=rewrittenText}catch(e){}window.sceneText=rewrittenText;}
+const old=typeof adaptiveStory==="function"?adaptiveStory:window.adaptiveStory;
+if(typeof old==="function"){
+ const variedBridge={
+  opening:["The warning gives you facts to weigh, not a plan to follow.","Nothing outside has settled. You still have the choice of what to do first.","The room remains yours to manage; the street has not made your decision for you."],
+  human:["The exchange pauses at the point you leave it. The other person has not made a choice for you.","The stranger waits for your response, watching the same narrow gap you are.","No agreement is assumed. The next words or movement are still yours."],
+  infected:["The immediate danger has changed, but the route remains yours to judge.","The dead have reacted to this moment; nothing says where they will go next.","You have a little space to act. Whether you use it to hold, leave, or fight is still your call."],
+  signal:["The frequency remains uncertain. You can keep listening or turn your attention elsewhere.","The message ends without resolving who sent it. The radio stays in reach.","No location is confirmed. The next attempt to answer or move is yours."],
+  weather:["The conditions make the outside harder to read. You have not moved unless you chose to.","The weather changes the cost of a route, not the decision to take it.","The same ground lies ahead; you can wait for a clearer moment or act in this one."],
+  shelter:["This position is only as secure as its entrances and your attention.","You can use the pause here, improve the room, or leave it when you decide.","A safe pause is possible only while the location and its entrances remain secure."],
+  supplies:["The search changes what you carry. This room's empty places stay empty.","You can keep, use, or leave the supplies you found; finding them does not spend them.","Nothing more appears without a new search in a different area."],
+  food:["You have the food you found. Eating it remains a separate choice.","The ration is available when you decide you need it; it has not been used automatically.","Your food count reflects the find. The next meal is still your decision."],
+  water:["The water you found is added to your supplies. You decide whether to drink it.","The container is yours to carry or assess; its contents were not consumed automatically.","Your water count reflects the find. Use it when you choose."],
+  quiet:["The pause ends without answering every question. You decide what deserves attention next.","The sounds fade into the background, but they do not prove the area is clear.","You have listened. What you do with what you heard remains open."]
+ };
+ const reworked=function(){
+  const beat=old.apply(this,arguments);if(!beat)return beat;
+  const s=typeof state!=="undefined"?state:(window.state||{}),h=typeof hero!=="undefined"?hero:(window.hero||{}),scene=typeof currentScene!=="undefined"?currentScene:(window.currentScene||""),kind=beat.kind||"quiet";
+  const n=Math.max(0,Number(typeof adaptiveBeat!=="undefined"?adaptiveBeat:s.daysSurvived||1));
+  const token=[s.currentZombieEventId||s.zombieBrain?.lastEvent?.id||"",n,scene,kind].join(":");
+  if(s.rewriteKey===token)return beat;
+  const extra=[],action=String(s.lastActionText||""),intent=s.lastActionIntent||{},outcome=String(s.lastOutcome||"");
+  if(kind==="human"){
+   const c=s.activeNpcId&&(s.npcContacts||{})[s.activeNpcId],npc=(s.generatedNpcProfiles||{})[s.activeNpcId]||(typeof getGeneratedNpc==="function"?getGeneratedNpc(s.activeNpcId):null);
+   if(c&&npc){if(c.trust<=20)extra.push(npc.name+" keeps a careful distance; the earlier exchange has not earned much trust.");else if(c.trust>=65)extra.push(npc.name+" recognizes the consideration shown before and responds with less suspicion.");if(c.memories?.length>1&&c.memories.at(-2)?.text)extra.push("They remember "+c.memories.at(-2).text+".")}
+   if(intent.introducesName)extra.push("You have given them your name. They still decide what to do with it.");else if(intent.asksName)extra.push("You asked for a name; the question is now part of the exchange.");else if(intent.offerTrade)extra.push("Your offer is on the table; no agreement is assumed.");
+  }
+  if(kind==="infected"){
+   const z=s.zombieBrain?.zombies,weapon=s.equipped||"";
+   if(s.lastActionWasStruck)extra.push("Pain makes the next movement harder. Your health is "+Math.max(0,Math.round(s.health||0))+"%.");
+   if((s.lastActionKind==="fire"||s.lastActionKind==="fight")&&weapon)extra.push("You have "+Math.max(0,Number(s.ammo)||0)+" rounds left for "+weapon+".");
+   if(z&&Number(z.alert)>=55)extra.push("Nearby dead are highly alert after the noise.");
+  }
+  if(kind==="supplies"||kind==="food"||kind==="water"){
+   if(s.lastSearchFound){const notice=String(s.lootNotice||"").replace(/^You recover\s*/i,"");if(notice)extra.push("You secure "+notice.replace(/\.$/,"")+".");}
+   else if(s.lastActionKind==="search")extra.push("The searched area is depleted; another attempt here will not restore its finite contents.");
+  }
+  if(s.lastActionKind==="build"&&s.safeRoom)extra.push("The room now counts as secure. Its entrances still need to stay watched.");
+  if(s.lastActionKind==="care"&&outcome)extra.push("The supplies used for care have been deducted from your kit.");
+  if(s.lastActionKind==="consume"&&outcome)extra.push("Your remaining food and water counts reflect what you used.");
+  if((s.lastActionKind==="move"||s.lastActionKind==="drive")&&intent.place)extra.push("You are now at "+String(s.lastPlace||intent.place)+". The passage does not move you farther.");
+  if((s.thirst??100)<30)extra.push("Thirst is beginning to slow your thinking.");
+  if((s.hunger??100)<30)extra.push("Hunger is beginning to dull your focus.");
+  if((s.sleep??100)<25)extra.push("Fatigue makes every careful task take more effort.");
+  const job=String(h.job||"");
+  if(job==="healthcare"&&["supplies","food","water"].includes(kind))extra.push("You check seals and labels before trusting anything meant to be swallowed.");
+  else if(job==="trades"&&kind==="shelter")extra.push("Your eye goes to the frame and hinges, where a weak point would show first.");
+  else if(job==="security"&&["infected","human"].includes(kind))extra.push("You keep the nearest exit in view while judging the threat.");
+  else if(job==="driver"&&["weather","signal"].includes(kind))extra.push("You weigh visibility and road access before committing to a route.");
+  const bridge=(variedBridge[kind]||variedBridge.quiet)[(n+action.length+outcome.length)%3];
+  beat.prose=String(beat.prose||"")+(extra.length?"\n\n"+extra.join(" "):"")+"\n\n"+bridge;
+  s.rewriteKey=token;return beat;
+ };
+ try{adaptiveStory=reworked}catch(e){}window.adaptiveStory=reworked;
+}
 })();
