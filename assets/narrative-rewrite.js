@@ -93,7 +93,7 @@ if(typeof old==="function"){
   else if(job==="security"&&["infected","human"].includes(kind))extra.push("You keep the nearest exit in view while judging the threat.");
   else if(job==="driver"&&["weather","signal"].includes(kind))extra.push("You weigh visibility and road access before committing to a route.");
   const bridge=(variedBridge[kind]||variedBridge.quiet)[(n+action.length+outcome.length)%3];
-  beat.prose=String(beat.prose||"")+(extra.length?"\n\n"+extra.join(" "):"")+"\n\n"+bridge;
+  beat.prose=String(beat.prose||"")+(extra.length?"\n\n"+extra.join(" "):"")+(action||outcome?"":"\n\n"+bridge);
   s.rewriteKey=token;return beat;
  };
  try{adaptiveStory=reworked}catch(e){}window.adaptiveStory=reworked;
